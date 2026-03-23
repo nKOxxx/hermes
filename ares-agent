@@ -1,0 +1,426 @@
+#!/bin/bash
+# ============================================================================
+# ARES AGENT - Multi-Agent Orchestrator
+# Run multiple AI agents in parallel on Mac Mini/MacBook
+# ============================================================================
+
+set -e
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+STATE_DIR="$HOME/Library/Application Support/ares-agent"
+CONFIG_FILE="$STATE_DIR/config.json"
+AGENTS_DIR="$STATE_DIR/agents"
+RESULTS_DIR="$STATE_DIR/results"
+WORKSPACE_DIR="${WORKSPACE_DIR:-$HOME/Projects}"
+
+mkdir -p "$STATE_DIR" "$AGENTS_DIR" "$RESULTS_DIR"
+
+# Colors
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+YELLOW='\033[1;33m'
+BLUE='\033[0;34m'
+CYAN='\033[0;36m'
+NC='\033[0m'
+
+log() { echo -e "${BLUE}[ARES]${NC} $1"; }
+log_success() { echo -e "${GREEN}[OK]${NC} $1"; }
+log_warn() { echo -e "${YELLOW}[WARN]${NC} $1"; }
+log_error() { echo -e "${RED}[ERROR]${NC} $1"; }
+
+# ============================================================================
+# CONFIG
+# ============================================================================
+
+load_config() {
+    if [ -f "$CONFIG_FILE" ]; then
+        WORKSPACE_DIR=$(jq -r '.workspace // env.WORKSPACE_DIR // "$HOME/Projects"' "$CONFIG_FILE" 2>/dev/null || echo "$HOME/Projects")
+    fi
+}
+
+save_config() {
+    cat > "$CONFIG_FILE" << EOF
+{
+    "workspace": "$WORKSPACE_DIR",
+    "version": "1.0.0",
+    "created": "$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+}
+EOF
+}
+
+# ============================================================================
+# WORKTREE MANAGER
+# ============================================================================
+
+worktree_create() {
+    local name="$1"
+    local repo="${2:-$WORKSPACE_DIR}"
+    local branch="agent/$name"
+    local worktree_path="$AGENTS_DIR/$name"
+    
+    if [ -d "$worktree_path/.git" ]; then
+        log_warn "Worktree '$name' already exists at $worktree_path"
+        return 1
+    fi
+    
+    log "Creating worktree: $name"
+    log "  Source repo: $repo"
+    log "  Worktree path: $worktree_path"
+    
+    mkdir -p "$worktree_path"
+    git -C "$repo" worktree add -b "$branch" "$worktree_path" 2>&1 || {
+        log_error "Failed to create worktree"
+        return 1
+    }
+    
+    echo "$worktree_path" > "$AGENTS_DIR/$name/.worktree-path"
+    echo "Created: $(date)" >> "$AGENTS_DIR/$name/.meta"
+    
+    log_success "Worktree created: $name"
+}
+
+worktree_list() {
+    log "Active Worktrees:"
+    echo ""
+    for dir in "$AGENTS_DIR"/*/; do
+        [ -d "$dir" ] || continue
+        local name=$(basename "$dir")
+        local path=$(cat "$dir/.worktree-path" 2>/dev/null || echo "unknown")
+        local status="unknown"
+        if [ -d "$dir/.git" ]; then
+            status="active"
+        fi
+        echo -e "  ${CYAN}$name${NC}"
+        echo "    Path: $path"
+        echo "    Status: $status"
+        echo ""
+    done
+}
+
+worktree_remove() {
+    local name="$1"
+    local worktree_path="$AGENTS_DIR/$name"
+    
+    if [ ! -d "$worktree_path" ]; then
+        log_error "Worktree '$name' not found"
+        return 1
+    fi
+    
+    log "Removing worktree: $name"
+    git worktree remove "$worktree_path" 2>/dev/null || git worktree prune
+    rm -rf "$worktree_path"
+    log_success "Removed: $name"
+}
+
+# ============================================================================
+# AGENT LAUNCHER
+# ============================================================================
+
+launch_agent() {
+    local name="$1"
+    local task="$2"
+    local worktree_path="$AGENTS_DIR/$name"
+    
+    if [ ! -d "$worktree_path" ]; then
+        log_error "Worktree '$name' not found. Create it first with: ares-agent worktree create $name"
+        return 1
+    fi
+    
+    log "Launching agent: $name"
+    log "  Task: $task"
+    log "  Worktree: $worktree_path"
+    
+    # Save task
+    echo "$task" > "$worktree_path/.agent-task"
+    echo "Started: $(date)" > "$worktree_path/.agent-status"
+    echo "Status: running" >> "$worktree_path/.agent-status"
+    
+    # Launch in background
+    (
+        cd "$worktree_path"
+        
+        # Create a simple agent script
+        cat > "$worktree_path/run-agent.sh" << AGENT_SCRIPT
+#!/bin/bash
+echo "Agent: $name"
+echo "Task: $task"
+echo ""
+echo "Working in: $(pwd)"
+echo ""
+
+# Simulate work - in real implementation, this would spawn an OpenClaw agent
+# For now, just create a marker file
+sleep 2
+
+# Create result marker
+mkdir -p "$worktree_path/results"
+echo "Agent completed at: $(date)" > "$worktree_path/results/status.txt"
+echo "Task: $task" >> "$worktree_path/results/status.txt"
+echo "Files modified:" >> "$worktree_path/results/status.txt"
+git status --short >> "$worktree_path/results/status.txt" 2>/dev/null || true
+
+echo "Agent $name finished"
+AGENT_SCRIPT
+        
+        chmod +x "$worktree_path/run-agent.sh"
+        
+        # Run the agent
+        "$worktree_path/run-agent.sh" > "$worktree_path/agent.log" 2>&1
+        
+        # Update status
+        echo "Completed: $(date)" > "$worktree_path/.agent-status"
+        echo "Status: completed" >> "$worktree_path/.agent-status"
+        
+    ) &
+    
+    local pid=$!
+    echo "$pid" > "$worktree_path/.agent-pid"
+    
+    log_success "Agent launched (PID: $pid)"
+    echo "$pid"
+}
+
+launch_parallel() {
+    local tasks=("$@")
+    local pids=()
+    
+    log "Launching ${#tasks[@]} agents in parallel..."
+    
+    for task in "${tasks[@]}"; do
+        local name=$(echo "$task" | tr ' ' '-' | tr -cd 'a-zA-Z0-9-' | head -c 20)
+        worktree_create "$name" "$WORKSPACE_DIR" 2>/dev/null || true
+        local pid=$(launch_agent "$name" "$task" &)
+        pids+=("$pid")
+    done
+    
+    log_success "All ${#tasks[@]} agents launched"
+    log "Run 'ares-agent status' to monitor progress"
+}
+
+# ============================================================================
+# STATUS & RESULTS
+# ============================================================================
+
+show_status() {
+    log "ARES Agent Status"
+    echo ""
+    
+    for dir in "$AGENTS_DIR"/*/; do
+        [ -d "$dir" ] || continue
+        local name=$(basename "$dir")
+        local status="unknown"
+        local pid=""
+        
+        if [ -f "$dir/.agent-status" ]; then
+            status=$(grep "Status:" "$dir/.agent-status" | cut -d: -f2 | tr -d ' ')
+        fi
+        
+        if [ -f "$dir/.agent-pid" ]; then
+            pid=$(cat "$dir/.agent-pid")
+            if ! kill -0 "$pid" 2>/dev/null; then
+                status="completed"
+            fi
+        fi
+        
+        local color="$NC"
+        case "$status" in
+            running) color="$YELLOW" ;;
+            completed) color="$GREEN" ;;
+            failed) color="$RED" ;;
+        esac
+        
+        echo -e "  ${CYAN}$name${NC} - ${color}$status${NC} (PID: $pid)"
+    done
+    
+    echo ""
+}
+
+collect_results() {
+    local output_dir="$RESULTS_DIR/results-$(date +%Y%m%d-%H%M%S)"
+    mkdir -p "$output_dir"
+    
+    log "Collecting results to: $output_dir"
+    
+    for dir in "$AGENTS_DIR"/*/; do
+        [ -d "$dir" ] || continue
+        local name=$(basename "$dir")
+        
+        if [ -f "$dir/results/status.txt" ]; then
+            cp "$dir/results/status.txt" "$output_dir/$name.txt"
+            log_success "Collected: $name"
+        fi
+    done
+    
+    log_success "Results saved to: $output_dir"
+}
+
+# ============================================================================
+# WEB UI
+# ============================================================================
+
+start_ui() {
+    local port="${1:-8765}"
+    
+    log "Starting ARES Web UI on http://localhost:$port"
+    
+    # Create simple status page
+    cat > "$STATE_DIR/index.html" << HTML
+<!DOCTYPE html>
+<html>
+<head>
+    <title>ARES Agent Dashboard</title>
+    <style>
+        body { font-family: -apple-system, sans-serif; background: #0a0a0a; color: #fff; padding: 20px; }
+        h1 { color: #00d4ff; }
+        .agent { background: #1a1a2e; padding: 15px; margin: 10px 0; border-radius: 8px; }
+        .running { border-left: 4px solid #f59e0b; }
+        .completed { border-left: 4px solid #10b981; }
+        .failed { border-left: 4px solid #ef4444; }
+        .status { color: #888; }
+        pre { background: #000; padding: 10px; border-radius: 4px; overflow-x: auto; }
+    </style>
+</head>
+<body>
+    <h1>⚡ ARES Agent Dashboard</h1>
+    <p class="status">Last updated: $(date)</p>
+    
+    <h2>Active Agents</h2>
+    <div id="agents">
+HTML
+
+    for dir in "$AGENTS_DIR"/*/; do
+        [ -d "$dir" ] || continue
+        local name=$(basename "$dir")
+        local status="unknown"
+        local task=""
+        
+        [ -f "$dir/.agent-status" ] && status=$(grep "Status:" "$dir/.agent-status" | cut -d: -f2 | tr -d ' ')
+        [ -f "$dir/.agent-task" ] && task=$(cat "$dir/.agent-task")
+        
+        cat >> "$STATE_DIR/index.html" << AGENT_HTML
+        <div class="agent $status">
+            <h3>$name</h3>
+            <p>Status: $status</p>
+            <p>Task: $task</p>
+        </div>
+AGENT_HTML
+    done
+
+    cat >> "$STATE_DIR/index.html" << HTML
+    </div>
+    
+    <h2>Quick Commands</h2>
+    <pre>
+ares-agent status     # Show all agents
+ares-agent results     # Collect results
+ares-agent spawn "Task 1" "Task 2"  # Launch agents
+    </pre>
+    
+    <script>
+        // Auto-refresh every 5 seconds
+        setTimeout(() => location.reload(), 5000);
+    </script>
+</body>
+</html>
+HTML
+
+    open "http://localhost:$port"
+    python3 -m http.server "$port" --directory "$STATE_DIR" &
+    echo $! > "$STATE_DIR/ui.pid"
+    
+    log_success "UI started at http://localhost:$port"
+}
+
+stop_ui() {
+    if [ -f "$STATE_DIR/ui.pid" ]; then
+        kill $(cat "$STATE_DIR/ui.pid") 2>/dev/null
+        rm "$STATE_DIR/ui.pid"
+        log "UI stopped"
+    fi
+}
+
+# ============================================================================
+# MAIN
+# ============================================================================
+
+show_help() {
+    cat << EOF
+${CYAN}⚡ ARES Agent - Multi-Agent Orchestrator${NC}
+
+${GREEN}Usage:${NC}
+    ares-agent <command> [options]
+
+${GREEN}Commands:${NC}
+    worktree create <name> [repo]   Create a worktree for an agent
+    worktree list                    List all worktrees
+    worktree remove <name>          Remove a worktree
+    launch <name> <task>            Launch an agent in a worktree
+    spawn <task1> <task2> ...       Launch multiple agents in parallel
+    status                           Show agent status
+    results                          Collect results from all agents
+    ui [port]                       Start web UI (default: 8765)
+    stop                            Stop web UI
+    config                          Show/set configuration
+
+${GREEN}Examples:${NC}
+    ares-agent worktree create argus
+    ares-agent spawn "Build Argus feature" "Build Predict feature"
+    ares-agent status
+    ares-agent ui
+
+${GREEN}How it works:${NC}
+    1. Create worktree for each agent
+    2. Launch agents in parallel
+    3. Monitor via CLI or Web UI
+    4. Collect and merge results
+
+EOF
+}
+
+# Parse commands
+COMMAND="${1:-help}"
+shift 2>/dev/null || true
+
+case "$COMMAND" in
+    worktree)
+        SUBCMD="${1:-list}"
+        shift 2>/dev/null || true
+        case "$SUBCMD" in
+            create) worktree_create "$1" "$2" ;;
+            list) worktree_list ;;
+            remove) worktree_remove "$1" ;;
+            *) log_error "Unknown worktree command: $SUBCMD" ;;
+        esac
+        ;;
+    launch)
+        launch_agent "$1" "$2"
+        ;;
+    spawn)
+        launch_parallel "$@"
+        ;;
+    status)
+        show_status
+        ;;
+    results)
+        collect_results
+        ;;
+    ui)
+        start_ui "$1"
+        ;;
+    stop)
+        stop_ui
+        ;;
+    config)
+        load_config
+        echo "Workspace: $WORKSPACE_DIR"
+        echo "Config: $CONFIG_FILE"
+        ;;
+    help|--help|-h)
+        show_help
+        ;;
+    *)
+        log_error "Unknown command: $COMMAND"
+        show_help
+        exit 1
+        ;;
+esac
