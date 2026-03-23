@@ -6,7 +6,6 @@
     <title>⚡ ARES Agent</title>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
-        
         :root {
             --bg-base: #09090b;
             --bg-surface: #111113;
@@ -27,32 +26,18 @@
             --font: -apple-system, BlinkMacSystemFont, 'SF Pro', system-ui, sans-serif;
             --font-mono: 'SF Mono', ui-monospace, Menlo, monospace;
         }
-        
-        html, body {
-            height: 100%;
-            font-family: var(--font);
-            background: var(--bg-base);
-            color: var(--text-primary);
-            font-size: 13px;
-            line-height: 1.5;
-            overflow: hidden;
-        }
-        
-        /* Layout */
-        .app { display: grid; grid-template-columns: 260px 1fr 340px; height: 100vh; }
+        html, body { height: 100%; font-family: var(--font); background: var(--bg-base); color: var(--text-primary); font-size: 13px; line-height: 1.5; overflow: hidden; }
+        .app { display: grid; grid-template-columns: 260px 1fr 320px; height: 100vh; }
         
         /* Left Sidebar */
         .sidebar { background: var(--bg-surface); border-right: 1px solid var(--border); display: flex; flex-direction: column; overflow: hidden; }
-        
         .sidebar-header { padding: 16px; border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; }
         .logo { display: flex; align-items: center; gap: 10px; }
         .logo-icon { width: 28px; height: 28px; background: linear-gradient(135deg, var(--accent), var(--accent-dim)); border-radius: 7px; display: flex; align-items: center; justify-content: center; font-size: 14px; font-weight: 700; }
-        .logo-text { font-size: 15px; font-weight: 600; letter-spacing: -0.3px; }
-        
+        .logo-text { font-size: 15px; font-weight: 600; }
         .sidebar-actions { display: flex; gap: 6px; }
         
         .repo-list { flex: 1; overflow-y: auto; padding: 8px; }
-        
         .repo-item { margin-bottom: 2px; }
         .repo-header { display: flex; align-items: center; gap: 8px; padding: 8px 10px; border-radius: 7px; cursor: pointer; transition: background 0.1s; }
         .repo-header:hover { background: var(--bg-hover); }
@@ -65,25 +50,22 @@
         .workspace-item { display: flex; align-items: center; gap: 8px; padding: 6px 10px; border-radius: 6px; cursor: pointer; font-size: 12px; color: var(--text-secondary); transition: all 0.1s; }
         .workspace-item:hover { background: var(--bg-hover); color: var(--text-primary); }
         .workspace-item.active { background: var(--accent-glow); color: var(--accent); }
-        .ws-indicator { width: 8px; height: 8px; border-radius: 50%; background: var(--text-muted); }
-        .ws-indicator.running { background: var(--warning); animation: pulse 1.5s infinite; }
-        .ws-indicator.completed { background: var(--success); }
-        .ws-indicator.failed, .ws-indicator.stopped { background: var(--error); }
+        .ws-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--text-muted); }
+        .ws-dot.running { background: var(--warning); animation: pulse 1.5s infinite; }
+        .ws-dot.completed { background: var(--success); }
+        .ws-dot.failed, .ws-dot.stopped { background: var(--error); }
         @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.4; } }
         .ws-name { flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
         
         .sidebar-footer { padding: 12px; border-top: 1px solid var(--border); }
         
-        /* Main Content */
+        /* Main */
         .main { display: flex; flex-direction: column; background: var(--bg-base); min-width: 0; }
-        
         .main-header { padding: 14px 20px; border-bottom: 1px solid var(--border); background: var(--bg-surface); display: flex; align-items: center; justify-content: space-between; }
-        
         .breadcrumb { display: flex; align-items: center; gap: 6px; font-size: 13px; color: var(--text-muted); }
         .breadcrumb span { color: var(--text-primary); font-weight: 500; }
         
         .header-actions { display: flex; gap: 8px; }
-        
         .btn { display: inline-flex; align-items: center; gap: 6px; padding: 8px 14px; border-radius: 7px; font-size: 12px; font-weight: 500; cursor: pointer; transition: all 0.15s; border: none; }
         .btn-default { background: var(--bg-elevated); color: var(--text-primary); }
         .btn-default:hover { background: var(--bg-hover); }
@@ -95,34 +77,28 @@
         .btn-ghost:hover { background: var(--bg-hover); color: var(--text-primary); }
         .btn-sm { padding: 6px 10px; font-size: 11px; }
         
-        /* Tasks Section */
+        /* Tasks */
         .tasks-section { padding: 16px 20px; border-bottom: 1px solid var(--border); background: var(--bg-surface); }
         .tasks-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
         .tasks-title { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; color: var(--text-muted); }
-        
         .task-input-row { display: flex; gap: 8px; }
         .task-input { flex: 1; background: var(--bg-base); border: 1px solid var(--border); border-radius: 7px; padding: 10px 12px; font-size: 13px; color: var(--text-primary); transition: border-color 0.15s; }
         .task-input:focus { outline: none; border-color: var(--accent); }
-        
         .task-list { max-height: 160px; overflow-y: auto; margin-top: 12px; }
         .task-item { display: flex; align-items: center; gap: 10px; padding: 8px 0; border-bottom: 1px solid var(--border-subtle); }
         .task-item:last-child { border-bottom: none; }
-        
         .task-check { width: 18px; height: 18px; border: 2px solid var(--border); border-radius: 4px; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all 0.15s; font-size: 11px; }
         .task-check:hover { border-color: var(--accent); }
         .task-check.checked { background: var(--success); border-color: var(--success); color: #fff; }
-        
         .task-text { flex: 1; font-size: 13px; }
         .task-item.completed .task-text { text-decoration: line-through; color: var(--text-muted); }
-        
         .task-delete { opacity: 0; cursor: pointer; color: var(--text-muted); font-size: 16px; padding: 4px; }
         .task-item:hover .task-delete { opacity: 1; }
         .task-delete:hover { color: var(--error); }
         
-        /* Chat Area */
+        /* Chat */
         .chat-area { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
         .messages { flex: 1; overflow-y: auto; padding: 20px; }
-        
         .message { margin-bottom: 24px; }
         .message-header { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
         .message-avatar { width: 32px; height: 32px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 600; }
@@ -130,11 +106,10 @@
         .message-avatar.user { background: var(--bg-elevated); border: 1px solid var(--border); }
         .message-name { font-weight: 500; font-size: 13px; }
         .message-time { font-size: 11px; color: var(--text-muted); }
-        
         .message-content { background: var(--bg-surface); border: 1px solid var(--border); border-radius: 12px; padding: 16px; font-size: 13px; line-height: 1.7; }
         .message.user .message-content { background: var(--bg-elevated); }
-        
-        .tool-output { margin-top: 12px; padding: 12px; background: var(--bg-base); border-radius: 8px; font-family: var(--font-mono); font-size: 11px; color: var(--success); white-space: pre-wrap; max-height: 200px; overflow-y: auto; }
+        .tool-output { margin-top: 12px; padding: 12px; background: var(--bg-base); border-radius: 8px; font-family: var(--font-mono); font-size: 11px; color: var(--success); white-space: pre-wrap; max-height: 300px; overflow-y: auto; }
+        .tool-output.error { color: var(--error); }
         
         .input-area { padding: 16px 20px; border-top: 1px solid var(--border); background: var(--bg-surface); }
         .input-row { display: flex; gap: 10px; align-items: flex-end; }
@@ -144,20 +119,15 @@
         /* Right Panel */
         .panel { background: var(--bg-surface); border-left: 1px solid var(--border); display: flex; flex-direction: column; overflow: hidden; }
         .panel-header { padding: 14px 16px; border-bottom: 1px solid var(--border); font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; color: var(--text-muted); }
-        
         .panel-content { flex: 1; overflow-y: auto; padding: 16px; }
-        
         .panel-section { margin-bottom: 20px; }
         .panel-label { font-size: 11px; font-weight: 500; text-transform: uppercase; letter-spacing: 0.5px; color: var(--text-muted); margin-bottom: 8px; }
-        
         .panel-value { font-size: 13px; color: var(--text-primary); }
         .panel-value.mono { font-family: var(--font-mono); font-size: 12px; }
         .panel-value.running { color: var(--warning); }
         .panel-value.completed { color: var(--success); }
         .panel-value.failed { color: var(--error); }
-        
         .branch-badge { display: inline-flex; align-items: center; gap: 6px; padding: 5px 10px; background: var(--bg-elevated); border: 1px solid var(--border); border-radius: 6px; font-family: var(--font-mono); font-size: 12px; }
-        
         .files-list { margin-top: 8px; }
         .file-item { display: flex; align-items: center; gap: 8px; padding: 6px 0; font-size: 12px; border-bottom: 1px solid var(--border-subtle); }
         .file-item:last-child { border-bottom: none; }
@@ -178,21 +148,17 @@
         .modal-overlay.visible { opacity: 1; visibility: visible; }
         .modal { background: var(--bg-surface); border: 1px solid var(--border); border-radius: 16px; width: 480px; max-width: 90%; transform: scale(0.95); transition: transform 0.2s; }
         .modal-overlay.visible .modal { transform: scale(1); }
-        
         .modal-header { padding: 20px 24px; border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; }
         .modal-title { font-size: 16px; font-weight: 600; }
         .modal-close { width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; border-radius: 8px; cursor: pointer; color: var(--text-muted); transition: all 0.15s; }
         .modal-close:hover { background: var(--bg-hover); color: var(--text-primary); }
-        
         .modal-body { padding: 24px; }
         .form-group { margin-bottom: 16px; }
-        .form-group:last-child { margin-bottom: 0; }
         .form-label { display: block; font-size: 12px; font-weight: 500; color: var(--text-secondary); margin-bottom: 6px; }
         .form-input { width: 100%; background: var(--bg-base); border: 1px solid var(--border); border-radius: 8px; padding: 10px 12px; font-size: 13px; color: var(--text-primary); transition: border-color 0.15s; }
         .form-input:focus { outline: none; border-color: var(--accent); }
         .form-input::placeholder { color: var(--text-muted); }
         select.form-input { cursor: pointer; }
-        
         .modal-footer { padding: 16px 24px; border-top: 1px solid var(--border); display: flex; justify-content: flex-end; gap: 8px; }
         
         /* Scrollbar */
@@ -211,27 +177,23 @@
                     <span class="logo-text">ARES</span>
                 </div>
                 <div class="sidebar-actions">
-                    <button class="btn btn-ghost btn-sm" onclick="openAddRepo()" title="Add Repository">+</button>
+                    <button class="btn btn-ghost btn-sm" onclick="openModal('add-repo')" title="Add Repository">+</button>
                 </div>
             </div>
             
-            <div class="repo-list" id="repo-list">
-                <!-- Rendered by JS -->
-            </div>
+            <div class="repo-list" id="repo-list"><!-- JS --></div>
             
             <div class="sidebar-footer">
-                <button class="btn btn-default" style="width: 100%;" onclick="openNewWorkspace()">
+                <button class="btn btn-default" style="width: 100%;" onclick="openModal('new-workspace')">
                     <span>+</span> New Workspace
                 </button>
             </div>
         </aside>
 
-        <!-- Main Content -->
+        <!-- Main -->
         <main class="main">
             <header class="main-header">
-                <div class="breadcrumb" id="breadcrumb">
-                    <span>Select a workspace</span>
-                </div>
+                <div class="breadcrumb" id="breadcrumb"><span>Select workspace</span></div>
                 <div class="header-actions">
                     <button class="btn btn-default" id="btn-spawn" style="display: none;" onclick="spawnAgent()">
                         <span>▶</span> Spawn Agent
@@ -242,18 +204,16 @@
                 </div>
             </header>
             
-            <!-- Tasks Section -->
+            <!-- Tasks -->
             <div class="tasks-section" id="tasks-section" style="display: none;">
                 <div class="tasks-header">
-                    <span class="tasks-title">Tasks</span>
+                    <span class="tasks-title">Task List</span>
                 </div>
                 <div class="task-input-row">
                     <input type="text" class="task-input" id="task-input" placeholder="Add a task..." onkeydown="if(event.key==='Enter')addTask()">
                     <button class="btn btn-default btn-sm" onclick="addTask()">Add</button>
                 </div>
-                <div class="task-list" id="task-list">
-                    <!-- Rendered by JS -->
-                </div>
+                <div class="task-list" id="task-list"><!-- JS --></div>
             </div>
             
             <!-- Chat -->
@@ -262,13 +222,13 @@
                     <div class="empty-state">
                         <div class="empty-icon">💻</div>
                         <h3>No Workspace Selected</h3>
-                        <p>Select a workspace or create a new one</p>
+                        <p>Select or create a workspace to begin</p>
                     </div>
                 </div>
-                <div class="input-area">
+                <div class="input-area" id="input-area" style="display: none;">
                     <div class="input-row">
-                        <textarea class="message-input" id="message-input" placeholder="Tell the agent what to do..." rows="1" onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendMessage()}"></textarea>
-                        <button class="btn btn-primary" onclick="sendMessage()">Send</button>
+                        <textarea class="message-input" id="message-input" placeholder="Tell the agent what to build..." rows="1" onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendTask()}"></textarea>
+                        <button class="btn btn-primary" onclick="sendTask()">Send</button>
                     </div>
                 </div>
             </div>
@@ -290,20 +250,16 @@
         <div class="modal">
             <div class="modal-header">
                 <h3 class="modal-title">Add Repository</h3>
-                <div class="modal-close" onclick="closeModal('add-repo-modal')">×</div>
+                <div class="modal-close" onclick="closeModal('add-repo')">×</div>
             </div>
             <div class="modal-body">
                 <div class="form-group">
                     <label class="form-label">Repository URL</label>
                     <input type="text" class="form-input" id="repo-url" placeholder="https://github.com/user/repo.git">
                 </div>
-                <div class="form-group">
-                    <label class="form-label">Local Path (optional)</label>
-                    <input type="text" class="form-input" id="repo-path" placeholder="~/Projects/myrepo">
-                </div>
             </div>
             <div class="modal-footer">
-                <button class="btn btn-default" onclick="closeModal('add-repo-modal')">Cancel</button>
+                <button class="btn btn-default" onclick="closeModal('add-repo')">Cancel</button>
                 <button class="btn btn-primary" onclick="addRepo()">Add Repository</button>
             </div>
         </div>
@@ -314,44 +270,35 @@
         <div class="modal">
             <div class="modal-header">
                 <h3 class="modal-title">New Workspace</h3>
-                <div class="modal-close" onclick="closeModal('new-workspace-modal')">×</div>
+                <div class="modal-close" onclick="closeModal('new-workspace')">×</div>
             </div>
             <div class="modal-body">
                 <div class="form-group">
                     <label class="form-label">Workspace Name</label>
-                    <input type="text" class="form-input" id="ws-name" placeholder="feature/argus-implementation">
+                    <input type="text" class="form-input" id="ws-name" placeholder="feature/add-new-feature">
                 </div>
                 <div class="form-group">
                     <label class="form-label">Repository</label>
-                    <select class="form-input" id="ws-repo">
-                        <!-- Populated by JS -->
-                    </select>
+                    <select class="form-input" id="ws-repo"><!-- JS --></select>
                 </div>
             </div>
             <div class="modal-footer">
-                <button class="btn btn-default" onclick="closeModal('new-workspace-modal')">Cancel</button>
+                <button class="btn btn-default" onclick="closeModal('new-workspace')">Cancel</button>
                 <button class="btn btn-primary" onclick="createWorkspace()">Create Workspace</button>
             </div>
         </div>
     </div>
 
     <script>
-        // ============================================================================
-        // STATE
-        // ============================================================================
-        
+        // State
         let repos = [];
         let workspaces = [];
-        let selectedWorkspace = null;
+        let selectedWs = null;
         let selectedRepo = null;
         let eventSource = null;
-        
         const API = 'http://localhost:8765';
-        
-        // ============================================================================
-        // API CALLS
-        // ============================================================================
-        
+
+        // API
         async function api(method, endpoint, data = {}) {
             try {
                 const res = await fetch(`${API}${endpoint}`, {
@@ -359,103 +306,79 @@
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(data)
                 });
-                return await res.json();
-            } catch (e) {
-                console.error('API error:', e);
-                return { error: e.message };
-            }
+                return res.json();
+            } catch (e) { return { error: e.message }; }
         }
-        
-        // Load initial data
-        async function loadData() {
-            const [reposRes, workspacesRes] = await Promise.all([
+
+        // Load
+        async function load() {
+            const [r, w] = await Promise.all([
                 api('GET', '/api/repos'),
                 api('GET', '/api/workspaces')
             ]);
-            
-            if (!reposRes.error) repos = reposRes;
-            if (!workspacesRes.error) workspaces = workspacesRes;
-            
+            if (!r.error) repos = r;
+            if (!w.error) workspaces = w;
             render();
             connectSSE();
         }
-        
-        // SSE for real-time updates
+
+        // SSE
         function connectSSE() {
             eventSource = new EventSource(`${API}/events`);
-            eventSource.onmessage = handleUpdate;
-            eventSource.onerror = () => {
-                setTimeout(connectSSE, 3000);
+            eventSource.onmessage = ev => {
+                const d = JSON.parse(ev.data);
+                handleUpdate(d);
             };
+            eventSource.onerror = () => setTimeout(connectSSE, 3000);
         }
-        
-        function handleUpdate(event) {
-            const data = JSON.parse(event.data);
-            const wsId = data.wsId || data.workspaceId;
-            
-            if (wsId) {
-                const ws = workspaces.find(w => w.id === wsId);
-                if (ws) {
-                    if (data.type === 'task_added') {
-                        ws.tasks = ws.tasks || [];
-                        ws.tasks.push(data.task);
-                    }
-                    if (data.type === 'task_completed') {
-                        const task = ws.tasks?.find(t => t.id === data.taskId);
-                        if (task) task.completed = true;
-                    }
-                    if (data.type === 'agent_complete') {
-                        ws.status = 'completed';
-                    }
-                    if (data.type === 'output' && selectedWorkspace === wsId) {
-                        appendOutput(data.line);
-                    }
-                }
+
+        function handleUpdate(d) {
+            const ws = workspaces.find(w => w.id === d.wsId);
+            if (!ws) return;
+
+            if (d.type === 'task_added' || d.type === 'task_completed') {
+                ws.tasks = ws.tasks || [];
+                if (d.type === 'task_added') ws.tasks.push(d.task);
+                else { const t = ws.tasks.find(t => t.id === d.taskId); if (t) t.completed = true; }
+                renderTasks();
             }
-            
+            if (d.type === 'spawn') ws.status = 'running';
+            if (d.type === 'complete') ws.status = d.code === 0 ? 'completed' : 'failed';
+            if (d.type === 'stdout' || d.type === 'stderr') appendOutput(d.output, d.type === 'stderr');
+            if (d.type === 'killed') ws.status = 'stopped';
             render();
         }
-        
-        // ============================================================================
-        // RENDER
-        // ============================================================================
-        
+
+        // Render
         function render() {
             renderRepos();
             renderWorkspace();
             renderTasks();
             renderPanel();
             updateButtons();
-            updateRepoSelect();
         }
-        
+
         function renderRepos() {
-            const container = document.getElementById('repo-list');
-            
-            if (repos.length === 0) {
-                container.innerHTML = `
-                    <div class="empty-state" style="padding: 20px;">
-                        <p style="font-size: 12px;">No repos added yet</p>
-                    </div>
-                `;
+            const el = document.getElementById('repo-list');
+            if (!repos.length) {
+                el.innerHTML = '<div class="empty-state" style="padding: 20px;"><p style="font-size: 12px;">No repos. Add one.</p></div>';
                 return;
             }
-            
-            container.innerHTML = repos.map(repo => {
-                const repoWorkspaces = workspaces.filter(ws => ws.repoId === repo.id);
+            el.innerHTML = repos.map(repo => {
+                const ws = workspaces.filter(w => w.repoId === repo.id);
                 return `
                     <div class="repo-item">
                         <div class="repo-header ${selectedRepo === repo.id ? 'open' : ''}" onclick="toggleRepo('${repo.id}')">
                             <span class="repo-icon">📁</span>
                             <span class="repo-name">${repo.name}</span>
-                            <span class="repo-badge">${repoWorkspaces.length}</span>
+                            <span class="repo-badge">${ws.length}</span>
                         </div>
                         ${selectedRepo === repo.id ? `
                             <div class="workspace-list">
-                                ${repoWorkspaces.map(ws => `
-                                    <div class="workspace-item ${selectedWorkspace === ws.id ? 'active' : ''}" onclick="selectWorkspace('${ws.id}')">
-                                        <span class="ws-indicator ${ws.status || 'idle'}"></span>
-                                        <span class="ws-name">${ws.name}</span>
+                                ${ws.map(w => `
+                                    <div class="workspace-item ${selectedWs === w.id ? 'active' : ''}" onclick="selectWs('${w.id}')">
+                                        <span class="ws-dot ${w.status || 'idle'}"></span>
+                                        <span class="ws-name">${w.name}</span>
                                     </div>
                                 `).join('')}
                             </div>
@@ -464,64 +387,65 @@
                 `;
             }).join('');
         }
-        
+
         function renderWorkspace() {
             const breadcrumb = document.getElementById('breadcrumb');
-            const tasksSection = document.getElementById('tasks-section');
+            const tasksSec = document.getElementById('tasks-section');
             const messages = document.getElementById('messages');
-            
-            if (!selectedWorkspace) {
-                breadcrumb.innerHTML = '<span>Select a workspace</span>';
-                tasksSection.style.display = 'none';
+            const inputArea = document.getElementById('input-area');
+
+            if (!selectedWs) {
+                breadcrumb.innerHTML = '<span>Select workspace</span>';
+                tasksSec.style.display = 'none';
+                inputArea.style.display = 'none';
                 messages.innerHTML = `
                     <div class="empty-state">
                         <div class="empty-icon">💻</div>
                         <h3>No Workspace Selected</h3>
-                        <p>Select a workspace or create a new one</p>
+                        <p>Select or create a workspace to begin</p>
                     </div>
                 `;
                 return;
             }
-            
-            const ws = workspaces.find(w => w.id === selectedWorkspace);
+
+            const ws = workspaces.find(w => w.id === selectedWs);
             const repo = repos.find(r => r.id === ws.repoId);
-            breadcrumb.innerHTML = `<span>${repo?.name || 'Unknown'}</span><span style="color: var(--text-muted);"> / </span><span>${ws.name}</span>`;
-            tasksSection.style.display = 'block';
+            breadcrumb.innerHTML = `<span>${repo?.name || 'Unknown'}</span> / <span>${ws.name}</span>`;
+            tasksSec.style.display = 'block';
+            inputArea.style.display = 'block';
         }
-        
+
         function renderTasks() {
-            if (!selectedWorkspace) return;
-            
-            const ws = workspaces.find(w => w.id === selectedWorkspace);
-            const taskList = document.getElementById('task-list');
+            if (!selectedWs) return;
+            const ws = workspaces.find(w => w.id === selectedWs);
+            const list = document.getElementById('task-list');
             const tasks = ws.tasks || [];
-            
-            if (tasks.length === 0) {
-                taskList.innerHTML = '<div style="font-size: 12px; color: var(--text-muted); padding: 8px 0;">No tasks yet. Add one above.</div>';
+
+            if (!tasks.length) {
+                list.innerHTML = '<div style="font-size: 12px; color: var(--text-muted); padding: 8px 0;">No tasks. Add one above.</div>';
                 return;
             }
-            
-            taskList.innerHTML = tasks.map(task => `
-                <div class="task-item ${task.completed ? 'completed' : ''}">
-                    <div class="task-check ${task.completed ? 'checked' : ''}" onclick="toggleTask('${task.id}')">${task.completed ? '✓' : ''}</div>
-                    <span class="task-text">${task.text}</span>
-                    <span class="task-delete" onclick="deleteTask('${task.id}')">×</span>
+
+            list.innerHTML = tasks.map(t => `
+                <div class="task-item ${t.completed ? 'completed' : ''}">
+                    <div class="task-check ${t.completed ? 'checked' : ''}" onclick="toggleTask('${t.id}')">${t.completed ? '✓' : ''}</div>
+                    <span class="task-text">${t.text}</span>
+                    <span class="task-delete" onclick="deleteTask('${t.id}')">×</span>
                 </div>
             `).join('');
         }
-        
+
         function renderPanel() {
             const panel = document.getElementById('panel-content');
-            
-            if (!selectedWorkspace) {
-                panel.innerHTML = '<div class="empty-state"><p>Select a workspace to see status</p></div>';
+            if (!selectedWs) {
+                panel.innerHTML = '<div class="empty-state"><p>Select a workspace</p></div>';
                 return;
             }
-            
-            const ws = workspaces.find(w => w.id === selectedWorkspace);
+
+            const ws = workspaces.find(w => w.id === selectedWs);
             const repo = repos.find(r => r.id === ws.repoId);
             const files = ws.files || [];
-            
+
             panel.innerHTML = `
                 <div class="panel-section">
                     <div class="panel-label">Repository</div>
@@ -529,7 +453,7 @@
                 </div>
                 <div class="panel-section">
                     <div class="panel-label">Branch</div>
-                    <div class="branch-badge">⎇ ${ws.branch}</div>
+                    <div class="branch-badge">⎇ ${ws.branch || 'main'}</div>
                 </div>
                 <div class="panel-section">
                     <div class="panel-label">Status</div>
@@ -537,9 +461,9 @@
                 </div>
                 <div class="panel-section">
                     <div class="panel-label">Path</div>
-                    <div class="panel-value mono" style="word-break: break-all;">${ws.path || 'Not created yet'}</div>
+                    <div class="panel-value mono">${ws.path || 'Creating...'}</div>
                 </div>
-                ${files.length > 0 ? `
+                ${files.length ? `
                     <div class="panel-section">
                         <div class="panel-label">Changed Files (${files.length})</div>
                         <div class="files-list">
@@ -555,137 +479,98 @@
                 ` : ''}
             `;
         }
-        
+
         function updateButtons() {
-            const ws = workspaces.find(w => w.id === selectedWorkspace);
-            const spawnBtn = document.getElementById('btn-spawn');
-            const killBtn = document.getElementById('btn-kill');
-            
-            if (!ws) {
-                spawnBtn.style.display = 'none';
-                killBtn.style.display = 'none';
+            if (!selectedWs) {
+                document.getElementById('btn-spawn').style.display = 'none';
+                document.getElementById('btn-kill').style.display = 'none';
                 return;
             }
-            
-            if (ws.status === 'running') {
-                spawnBtn.style.display = 'none';
-                killBtn.style.display = 'inline-flex';
-            } else {
-                spawnBtn.style.display = 'inline-flex';
-                killBtn.style.display = 'none';
-            }
+            const ws = workspaces.find(w => w.id === selectedWs);
+            document.getElementById('btn-spawn').style.display = ws.status === 'running' ? 'none' : 'inline-flex';
+            document.getElementById('btn-kill').style.display = ws.status === 'running' ? 'inline-flex' : 'none';
         }
-        
-        function updateRepoSelect() {
-            const select = document.getElementById('ws-repo');
-            if (!select) return;
-            
-            select.innerHTML = repos.map(r => `
-                <option value="${r.id}">${r.name}</option>
-            `).join('');
-            
-            if (repos.length > 0 && !selectedRepo) {
-                selectedRepo = repos[0].id;
-            }
-        }
-        
-        // ============================================================================
-        // ACTIONS
-        // ============================================================================
-        
+
         function toggleRepo(id) {
             selectedRepo = selectedRepo === id ? null : id;
             render();
         }
-        
-        function selectWorkspace(id) {
-            selectedWorkspace = id;
+
+        function selectWs(id) {
+            selectedWs = id;
             render();
         }
-        
+
         async function addRepo() {
             const url = document.getElementById('repo-url').value.trim();
-            const path = document.getElementById('repo-path').value.trim();
             if (!url) return;
-            
-            const result = await api('POST', '/api/repos', { url, path });
-            if (!result.error) {
-                repos.push(result);
-                closeModal('add-repo-modal');
-                document.getElementById('repo-url').value = '';
-                document.getElementById('repo-path').value = '';
-                render();
-            }
+            const r = await api('POST', '/api/repos', { url });
+            if (!r.error) { repos.push(r); closeModal('add-repo'); document.getElementById('repo-url').value = ''; }
+            render();
         }
-        
+
         async function createWorkspace() {
             const name = document.getElementById('ws-name').value.trim();
             const repoId = document.getElementById('ws-repo').value;
             if (!name || !repoId) return;
-            
-            const result = await api('POST', '/api/workspaces', { name, repoId });
-            if (!result.error) {
-                workspaces.push(result);
-                closeModal('new-workspace-modal');
+            const w = await api('POST', '/api/workspaces', { name, repoId });
+            if (!w.error) {
+                workspaces.push(w);
+                closeModal('new-workspace');
                 document.getElementById('ws-name').value = '';
-                selectWorkspace(result.id);
-                render();
+                selectWs(w.id);
             }
         }
-        
+
         async function spawnAgent() {
-            if (!selectedWorkspace) return;
-            
-            const taskInput = document.getElementById('task-input');
-            const task = taskInput?.value.trim() || 'Default task';
-            
-            const result = await api('POST', `/api/workspaces/${selectedWorkspace}`, { action: 'spawn', task });
-            if (!result.error) {
+            if (!selectedWs) return;
+            const input = document.getElementById('task-input');
+            const task = input.value.trim() || 'Default task';
+            const r = await api('POST', `/api/workspaces/${selectedWs}`, { action: 'spawn', task });
+            if (!r.error) {
                 addMessage('user', task);
-                addMessage('agent', `Agent started on task: ${task}`);
-                render();
+                addMessage('agent', `Agent spawned. Working on: ${task}`);
             }
-        }
-        
-        async function killAgent() {
-            if (!selectedWorkspace) return;
-            await api('POST', `/api/workspaces/${selectedWorkspace}`, { action: 'kill' });
             render();
         }
-        
+
+        async function killAgent() {
+            if (!selectedWs) return;
+            await api('POST', `/api/workspaces/${selectedWs}`, { action: 'kill' });
+            render();
+        }
+
         async function addTask() {
-            if (!selectedWorkspace) return;
+            if (!selectedWs) return;
             const input = document.getElementById('task-input');
             const text = input.value.trim();
             if (!text) return;
-            
-            await api('POST', `/api/workspaces/${selectedWorkspace}`, { action: 'add_task', text });
+            await api('POST', `/api/workspaces/${selectedWs}`, { action: 'add_task', text });
             input.value = '';
             render();
         }
-        
+
         async function toggleTask(taskId) {
-            if (!selectedWorkspace) return;
-            await api('POST', `/api/workspaces/${selectedWorkspace}`, { action: 'complete_task', taskId });
+            if (!selectedWs) return;
+            await api('POST', `/api/workspaces/${selectedWs}`, { action: 'complete_task', taskId });
             render();
         }
-        
+
         async function deleteTask(taskId) {
-            if (!selectedWorkspace) return;
-            await api('POST', `/api/workspaces/${selectedWorkspace}`, { action: 'delete_task', taskId });
+            if (!selectedWs) return;
+            await api('POST', `/api/workspaces/${selectedWs}`, { action: 'delete_task', taskId });
             render();
         }
-        
-        function sendMessage() {
+
+        function sendTask() {
             const input = document.getElementById('message-input');
             const text = input.value.trim();
             if (!text) return;
-            
             addMessage('user', text);
             input.value = '';
             spawnAgent();
         }
-        
+
         function addMessage(type, text) {
             const messages = document.getElementById('messages');
             const div = document.createElement('div');
@@ -704,29 +589,32 @@
             messages.appendChild(div);
             messages.scrollTop = messages.scrollHeight;
         }
-        
-        function appendOutput(line) {
-            const output = document.getElementById('agent-output');
-            if (output) {
-                output.style.display = 'block';
-                output.textContent += line;
-                output.scrollTop = output.scrollHeight;
+
+        function appendOutput(line, isError = false) {
+            const out = document.getElementById('agent-output');
+            if (out) {
+                out.style.display = 'block';
+                out.className = `tool-output ${isError ? 'error' : ''}`;
+                out.textContent += line;
+                out.scrollTop = out.scrollHeight;
             }
         }
-        
-        // ============================================================================
-        // MODALS
-        // ============================================================================
-        
-        function openAddRepo() { document.getElementById('add-repo-modal').classList.add('visible'); }
-        function openNewWorkspace() { document.getElementById('new-workspace-modal').classList.add('visible'); }
-        
-        function closeModal(id) {
-            document.getElementById(id).classList.remove('visible');
+
+        function openModal(id) {
+            document.getElementById(`${id}-modal`).classList.add('visible');
+            if (id === 'new-workspace') updateRepoSelect();
         }
-        
+        function closeModal(id) { document.getElementById(`${id}-modal`).classList.remove('visible'); }
+
+        function updateRepoSelect() {
+            const sel = document.getElementById('ws-repo');
+            sel.innerHTML = repos.map(r => `<option value="${r.id}">${r.name}</option>`).join('');
+            if (repos.length && !sel.value) sel.value = repos[0].id;
+        }
+
         // Init
-        document.addEventListener('DOMContentLoaded', loadData);
+        load();
     </script>
 </body>
 </html>
+</parameter>
