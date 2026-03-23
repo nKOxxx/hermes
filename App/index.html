@@ -8,14 +8,14 @@
         * { margin: 0; padding: 0; box-sizing: border-box; }
         :root {
             --bg-base: #09090b;
-            --bg-surface: #121214;
-            --bg-elevated: #1a1a1e;
-            --bg-hover: #242428;
-            --border: #2a2a2e;
-            --border-subtle: #1e1e22;
+            --bg-surface: #111113;
+            --bg-elevated: #18181b;
+            --bg-hover: #27272a;
+            --border: #27272a;
+            --border-subtle: #1f1f23;
             --accent: #22d3ee;
             --accent-dim: #0891b2;
-            --accent-glow: rgba(34, 211, 238, 0.15);
+            --accent-glow: rgba(34, 211, 238, 0.12);
             --text-primary: #fafafa;
             --text-secondary: #a1a1aa;
             --text-muted: #71717a;
@@ -23,192 +23,443 @@
             --warning: #f59e0b;
             --error: #ef4444;
         }
-        html, body {
-            height: 100%;
-            font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', sans-serif;
-            background: var(--bg-base);
-            color: var(--text-primary);
-            font-size: 14px;
-            line-height: 1.5;
-        }
-        .app { display: grid; grid-template-columns: 240px 1fr 280px; height: 100vh; }
-        .sidebar { background: var(--bg-surface); border-right: 1px solid var(--border); display: flex; flex-direction: column; }
-        .sidebar-header { padding: 16px; border-bottom: 1px solid var(--border); }
-        .logo { display: flex; align-items: center; gap: 10px; font-size: 15px; font-weight: 600; }
-        .logo-icon { width: 24px; height: 24px; background: linear-gradient(135deg, var(--accent), var(--accent-dim)); border-radius: 6px; display: flex; align-items: center; justify-content: center; font-size: 14px; }
-        .sidebar-nav { padding: 12px 8px; flex: 1; }
-        .nav-item { display: flex; align-items: center; gap: 10px; padding: 8px 12px; border-radius: 6px; color: var(--text-secondary); cursor: pointer; transition: all 0.15s; font-size: 13px; }
-        .nav-item:hover { background: var(--bg-hover); color: var(--text-primary); }
-        .nav-item.active { background: var(--accent-glow); color: var(--accent); }
+        html, body { height: 100%; font-family: -apple-system, BlinkMacSystemFont, sans-serif; background: var(--bg-base); color: var(--text-primary); font-size: 13px; }
+        
+        /* Layout */
+        .app { display: grid; grid-template-columns: 260px 1fr 300px; height: 100vh; }
+        
+        /* Left Sidebar - Repos & Workspaces */
+        .sidebar { background: var(--bg-surface); border-right: 1px solid var(--border); display: flex; flex-direction: column; overflow: hidden; }
+        .sidebar-header { padding: 14px 16px; border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; }
+        .logo { display: flex; align-items: center; gap: 8px; font-size: 14px; font-weight: 600; }
+        .logo-icon { width: 24px; height: 24px; background: linear-gradient(135deg, var(--accent), var(--accent-dim)); border-radius: 5px; display: flex; align-items: center; justify-content: center; font-size: 12px; }
+        
+        .repo-list { flex: 1; overflow-y: auto; padding: 8px; }
+        
+        .repo-item { margin-bottom: 4px; }
+        .repo-header { display: flex; align-items: center; gap: 8px; padding: 8px 10px; border-radius: 6px; cursor: pointer; transition: background 0.1s; }
+        .repo-header:hover { background: var(--bg-hover); }
+        .repo-header.open { background: var(--bg-elevated); }
+        .repo-icon { font-size: 14px; }
+        .repo-name { font-size: 13px; font-weight: 500; flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .repo-count { font-size: 11px; color: var(--text-muted); background: var(--bg-hover); padding: 1px 6px; border-radius: 10px; }
+        
+        .workspace-list { padding: 0 0 8px 32px; }
+        .workspace-item { display: flex; align-items: center; gap: 8px; padding: 6px 10px; border-radius: 5px; cursor: pointer; font-size: 12px; color: var(--text-secondary); transition: all 0.1s; }
+        .workspace-item:hover { background: var(--bg-hover); color: var(--text-primary); }
+        .workspace-item.active { background: var(--accent-glow); color: var(--accent); }
+        .workspace-item .ws-icon { font-size: 11px; }
+        .workspace-item .ws-name { flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .workspace-item .ws-status { width: 6px; height: 6px; border-radius: 50%; }
+        .workspace-item .ws-status.running { background: var(--warning); animation: pulse 1.5s infinite; }
+        .workspace-item .ws-status.completed { background: var(--success); }
+        .workspace-item .ws-status.failed { background: var(--error); }
+        
+        @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.4; } }
+        
         .sidebar-footer { padding: 12px; border-top: 1px solid var(--border); }
-        .agent-count { font-size: 12px; color: var(--text-muted); }
+        
+        /* Main Content */
         .main { display: flex; flex-direction: column; background: var(--bg-base); min-width: 0; }
-        .main-header { padding: 16px 24px; border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; background: var(--bg-surface); }
-        .page-title { font-size: 16px; font-weight: 600; }
-        .header-actions { display: flex; gap: 8px; }
-        .btn { display: inline-flex; align-items: center; gap: 6px; padding: 8px 14px; border-radius: 8px; font-size: 13px; font-weight: 500; cursor: pointer; transition: all 0.15s; border: none; background: var(--bg-elevated); color: var(--text-primary); }
+        .main-header { padding: 12px 20px; border-bottom: 1px solid var(--border); background: var(--bg-surface); display: flex; align-items: center; justify-content: space-between; }
+        .breadcrumb { display: flex; align-items: center; gap: 6px; font-size: 13px; color: var(--text-secondary); }
+        .breadcrumb .separator { color: var(--text-muted); }
+        .breadcrumb .current { color: var(--text-primary); font-weight: 500; }
+        
+        .main-actions { display: flex; gap: 8px; }
+        .btn { display: inline-flex; align-items: center; gap: 6px; padding: 7px 14px; border-radius: 7px; font-size: 12px; font-weight: 500; cursor: pointer; transition: all 0.15s; border: none; background: var(--bg-elevated); color: var(--text-primary); }
         .btn:hover { background: var(--bg-hover); }
-        .btn-primary { background: var(--accent); color: var(--bg-base); }
+        .btn-primary { background: var(--accent); color: #000; }
         .btn-primary:hover { background: #06b6d4; box-shadow: 0 0 20px var(--accent-glow); }
-        .content { flex: 1; padding: 24px; overflow-y: auto; }
-        .empty-state { display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%; text-align: center; color: var(--text-muted); }
-        .empty-icon { width: 64px; height: 64px; background: var(--bg-surface); border: 1px solid var(--border); border-radius: 16px; display: flex; align-items: center; justify-content: center; font-size: 28px; margin-bottom: 16px; }
-        .empty-state h3 { font-size: 15px; font-weight: 500; color: var(--text-secondary); margin-bottom: 4px; }
-        .agent-list { display: flex; flex-direction: column; gap: 8px; }
-        .agent-card { background: var(--bg-surface); border: 1px solid var(--border); border-radius: 10px; padding: 16px; cursor: pointer; transition: all 0.15s; }
-        .agent-card:hover { border-color: var(--border); background: var(--bg-elevated); }
-        .agent-card.active { border-color: var(--accent); box-shadow: 0 0 0 1px var(--accent-glow); }
-        .agent-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
-        .agent-name { display: flex; align-items: center; gap: 8px; font-weight: 500; font-size: 14px; }
-        .status-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--text-muted); }
-        .status-dot.running { background: var(--warning); animation: pulse 1.5s infinite; }
-        .status-dot.completed { background: var(--success); }
-        .status-dot.failed { background: var(--error); }
-        @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
-        .status-badge { font-size: 11px; padding: 2px 8px; border-radius: 4px; background: var(--bg-hover); color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; }
-        .status-badge.running { background: rgba(245, 158, 11, 0.15); color: var(--warning); }
-        .status-badge.completed { background: rgba(16, 185, 129, 0.15); color: var(--success); }
-        .agent-task { font-size: 13px; color: var(--text-secondary); margin-bottom: 12px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
-        .agent-meta { display: flex; align-items: center; gap: 16px; font-size: 12px; color: var(--text-muted); }
-        .panel { background: var(--bg-surface); border-left: 1px solid var(--border); display: flex; flex-direction: column; }
-        .panel-header { padding: 16px; border-bottom: 1px solid var(--border); font-size: 13px; font-weight: 500; color: var(--text-secondary); }
-        .panel-content { flex: 1; padding: 16px; overflow-y: auto; }
-        .activity-item { padding: 12px 0; border-bottom: 1px solid var(--border-subtle); }
-        .activity-item:last-child { border-bottom: none; }
-        .activity-time { font-size: 11px; color: var(--text-muted); margin-bottom: 4px; }
-        .activity-text { font-size: 13px; color: var(--text-secondary); }
-        .activity-text strong { color: var(--text-primary); font-weight: 500; }
-        .modal-overlay { position: fixed; inset: 0; background: rgba(0, 0, 0, 0.7); backdrop-filter: blur(4px); display: flex; align-items: center; justify-content: center; z-index: 100; opacity: 0; visibility: hidden; transition: all 0.2s; }
+        .btn-sm { padding: 5px 10px; font-size: 11px; }
+        
+        .chat-area { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
+        .messages { flex: 1; overflow-y: auto; padding: 20px; }
+        
+        .message { margin-bottom: 20px; }
+        .message-header { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
+        .message-avatar { width: 28px; height: 28px; border-radius: 6px; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 600; }
+        .message-avatar.agent { background: linear-gradient(135deg, var(--accent), var(--accent-dim)); color: #000; }
+        .message-avatar.user { background: var(--bg-elevated); border: 1px solid var(--border); }
+        .message-name { font-weight: 500; font-size: 13px; }
+        .message-time { font-size: 11px; color: var(--text-muted); }
+        .message-content { background: var(--bg-surface); border: 1px solid var(--border); border-radius: 10px; padding: 14px 16px; font-size: 13px; line-height: 1.6; }
+        .message.user .message-content { background: var(--bg-elevated); }
+        
+        .tool-calls { margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--border-subtle); }
+        .tool-call { display: flex; align-items: center; gap: 8px; padding: 8px 12px; background: var(--bg-base); border-radius: 6px; font-size: 12px; color: var(--text-muted); margin-bottom: 6px; }
+        .tool-call .tool-icon { font-size: 14px; }
+        
+        .input-area { padding: 16px 20px; border-top: 1px solid var(--border); background: var(--bg-surface); }
+        .input-row { display: flex; gap: 10px; }
+        .input-field { flex: 1; background: var(--bg-elevated); border: 1px solid var(--border); border-radius: 10px; padding: 12px 14px; font-size: 13px; color: var(--text-primary); resize: none; min-height: 44px; max-height: 120px; }
+        .input-field:focus { outline: none; border-color: var(--accent); }
+        
+        /* Right Panel - Status */
+        .panel { background: var(--bg-surface); border-left: 1px solid var(--border); display: flex; flex-direction: column; overflow: hidden; }
+        .panel-header { padding: 14px 16px; border-bottom: 1px solid var(--border); font-size: 12px; font-weight: 500; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; }
+        .panel-content { flex: 1; overflow-y: auto; padding: 16px; }
+        
+        .status-section { margin-bottom: 20px; }
+        .status-label { font-size: 11px; color: var(--text-muted); margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.5px; }
+        .status-value { font-size: 13px; color: var(--text-primary); }
+        
+        .branch-badge { display: inline-flex; align-items: center; gap: 6px; padding: 4px 10px; background: var(--bg-elevated); border: 1px solid var(--border); border-radius: 5px; font-size: 12px; font-family: ui-monospace, monospace; }
+        .branch-badge .branch-icon { font-size: 10px; }
+        
+        .files-list { margin-top: 8px; }
+        .file-item { display: flex; align-items: center; gap: 8px; padding: 6px 0; font-size: 12px; border-bottom: 1px solid var(--border-subtle); }
+        .file-item:last-child { border-bottom: none; }
+        .file-icon { font-size: 12px; }
+        .file-name { flex: 1; color: var(--text-secondary); font-family: ui-monospace, monospace; font-size: 11px; }
+        .file-diff { font-size: 10px; font-weight: 500; }
+        .file-diff.add { color: var(--success); }
+        .file-diff.remove { color: var(--error); }
+        
+        .pr-status { display: flex; align-items: center; gap: 8px; padding: 10px 12px; background: var(--bg-elevated); border-radius: 8px; }
+        .pr-status .pr-icon { font-size: 16px; }
+        .pr-status .pr-text { font-size: 12px; }
+        .pr-status .pr-text strong { display: block; color: var(--text-primary); }
+        .pr-status .pr-text span { color: var(--text-muted); }
+        
+        .empty-state { display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%; text-align: center; padding: 40px; color: var(--text-muted); }
+        .empty-state .empty-icon { width: 56px; height: 56px; background: var(--bg-surface); border: 1px solid var(--border); border-radius: 14px; display: flex; align-items: center; justify-content: center; font-size: 24px; margin-bottom: 16px; }
+        .empty-state h3 { font-size: 14px; font-weight: 500; color: var(--text-secondary); margin-bottom: 4px; }
+        .empty-state p { font-size: 12px; }
+        
+        /* Modal */
+        .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.7); backdrop-filter: blur(4px); display: flex; align-items: center; justify-content: center; z-index: 100; opacity: 0; visibility: hidden; transition: all 0.2s; }
         .modal-overlay.visible { opacity: 1; visibility: visible; }
-        .modal { background: var(--bg-surface); border: 1px solid var(--border); border-radius: 16px; width: 480px; max-width: 90%; transform: scale(0.95); transition: transform 0.2s; }
+        .modal { background: var(--bg-surface); border: 1px solid var(--border); border-radius: 14px; width: 440px; max-width: 90%; transform: scale(0.95); transition: transform 0.2s; }
         .modal-overlay.visible .modal { transform: scale(1); }
-        .modal-header { padding: 20px 24px; border-bottom: 1px solid var(--border); }
-        .modal-title { font-size: 16px; font-weight: 600; }
-        .modal-body { padding: 24px; }
-        .form-group { margin-bottom: 16px; }
-        .form-label { display: block; font-size: 13px; font-weight: 500; margin-bottom: 6px; color: var(--text-secondary); }
-        .form-input { width: 100%; background: var(--bg-base); border: 1px solid var(--border); border-radius: 8px; padding: 10px 12px; font-size: 14px; color: var(--text-primary); transition: border-color 0.15s; }
+        .modal-header { padding: 18px 20px; border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; }
+        .modal-title { font-size: 14px; font-weight: 600; }
+        .modal-close { width: 28px; height: 28px; display: flex; align-items: center; justify-content: center; border-radius: 6px; cursor: pointer; color: var(--text-muted); }
+        .modal-close:hover { background: var(--bg-hover); color: var(--text-primary); }
+        .modal-body { padding: 20px; }
+        .form-group { margin-bottom: 14px; }
+        .form-label { display: block; font-size: 12px; font-weight: 500; color: var(--text-secondary); margin-bottom: 6px; }
+        .form-input { width: 100%; background: var(--bg-elevated); border: 1px solid var(--border); border-radius: 7px; padding: 9px 12px; font-size: 13px; color: var(--text-primary); transition: border-color 0.15s; }
         .form-input:focus { outline: none; border-color: var(--accent); }
         .form-input::placeholder { color: var(--text-muted); }
-        textarea.form-input { min-height: 100px; resize: vertical; }
-        .modal-footer { padding: 16px 24px; border-top: 1px solid var(--border); display: flex; justify-content: flex-end; gap: 8px; }
-        ::-webkit-scrollbar { width: 8px; height: 8px; }
+        .modal-footer { padding: 14px 20px; border-top: 1px solid var(--border); display: flex; justify-content: flex-end; gap: 8px; }
+        
+        /* Scrollbar */
+        ::-webkit-scrollbar { width: 6px; }
         ::-webkit-scrollbar-track { background: transparent; }
-        ::-webkit-scrollbar-thumb { background: var(--bg-hover); border-radius: 4px; }
+        ::-webkit-scrollbar-thumb { background: var(--bg-hover); border-radius: 3px; }
     </style>
 </head>
 <body>
     <div class="app">
+        <!-- Left Sidebar - Repos & Workspaces -->
         <aside class="sidebar">
             <div class="sidebar-header">
                 <div class="logo">
                     <div class="logo-icon">⚡</div>
                     <span>ARES</span>
                 </div>
+                <button class="btn btn-sm" onclick="openAddRepo()">+</button>
             </div>
-            <nav class="sidebar-nav">
-                <div class="nav-item active"><span>◉</span><span>Agents</span></div>
-                <div class="nav-item"><span>⚙</span><span>Settings</span></div>
-            </nav>
+            <div class="repo-list" id="repo-list">
+                <!-- Repos will be rendered here -->
+            </div>
             <div class="sidebar-footer">
-                <div class="agent-count"><strong id="total-agents">0</strong> agents</div>
+                <button class="btn" style="width: 100%;" onclick="openNewWorkspace()">
+                    <span>+</span> New Workspace
+                </button>
             </div>
         </aside>
+
+        <!-- Main Content - Chat -->
         <main class="main">
             <header class="main-header">
-                <h1 class="page-title">Agents</h1>
-                <div class="header-actions">
-                    <button class="btn" onclick="refresh()">↻ Refresh</button>
-                    <button class="btn btn-primary" onclick="openModal()">+ New Agent</button>
+                <div class="breadcrumb">
+                    <span class="separator">/</span>
+                    <span class="current" id="current-workspace">Select a workspace</span>
+                </div>
+                <div class="main-actions">
+                    <button class="btn" onclick="openWorkspaceSettings()">⚙</button>
                 </div>
             </header>
-            <div class="content" id="content">
+            
+            <div class="chat-area" id="chat-area">
                 <div class="empty-state">
                     <div class="empty-icon">💻</div>
-                    <h3>No Agents Running</h3>
-                    <p>Spawn an agent to get started</p>
+                    <h3>No Workspace Selected</h3>
+                    <p>Select a workspace from the sidebar or create a new one</p>
+                </div>
+            </div>
+            
+            <div class="input-area">
+                <div class="input-row">
+                    <textarea class="input-field" id="message-input" placeholder="Ask the agent to help with this workspace..." rows="1"></textarea>
+                    <button class="btn btn-primary" onclick="sendMessage()">Send</button>
                 </div>
             </div>
         </main>
+
+        <!-- Right Panel - Status -->
         <aside class="panel">
-            <div class="panel-header">Activity</div>
-            <div class="panel-content" id="activity">
-                <div style="text-align: center; padding: 40px 0; color: var(--text-muted); font-size: 13px;">No activity yet</div>
+            <div class="panel-header">Workspace Status</div>
+            <div class="panel-content" id="panel-content">
+                <div class="empty-state" style="padding: 20px 0;">
+                    <p>Select a workspace to see status</p>
+                </div>
             </div>
         </aside>
     </div>
-    <div class="modal-overlay" id="modal">
+
+    <!-- Add Repo Modal -->
+    <div class="modal-overlay" id="add-repo-modal">
         <div class="modal">
-            <div class="modal-header"><h2 class="modal-title">⚡ New Agent</h2></div>
+            <div class="modal-header">
+                <h3 class="modal-title">Add Repository</h3>
+                <div class="modal-close" onclick="closeAddRepo()">×</div>
+            </div>
             <div class="modal-body">
                 <div class="form-group">
-                    <label class="form-label">Task Name</label>
-                    <input type="text" class="form-input" id="task-name" placeholder="e.g., Build Argus Feature">
+                    <label class="form-label">Repository URL</label>
+                    <input type="text" class="form-input" id="repo-url" placeholder="https://github.com/user/repo.git">
                 </div>
                 <div class="form-group">
-                    <label class="form-label">Description</label>
-                    <textarea class="form-input" id="task-desc" placeholder="Describe what this agent should do..."></textarea>
+                    <label class="form-label">Local Path (optional)</label>
+                    <input type="text" class="form-input" id="repo-path" placeholder="~/Projects/myrepo">
                 </div>
             </div>
             <div class="modal-footer">
-                <button class="btn" onclick="closeModal()">Cancel</button>
-                <button class="btn btn-primary" onclick="spawnAgent()">Spawn Agent</button>
+                <button class="btn" onclick="closeAddRepo()">Cancel</button>
+                <button class="btn btn-primary" onclick="addRepo()">Add Repository</button>
             </div>
         </div>
     </div>
+
+    <!-- New Workspace Modal -->
+    <div class="modal-overlay" id="new-workspace-modal">
+        <div class="modal">
+            <div class="modal-header">
+                <h3 class="modal-title">New Workspace</h3>
+                <div class="modal-close" onclick="closeNewWorkspace()">×</div>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label class="form-label">Workspace Name</label>
+                    <input type="text" class="form-input" id="ws-name" placeholder="e.g., feature/argus-implementation">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Base On (optional)</label>
+                    <select class="form-input" id="ws-base">
+                        <option value="">main</option>
+                    </select>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn" onclick="closeNewWorkspace()">Cancel</button>
+                <button class="btn btn-primary" onclick="createWorkspace()">Create Workspace</button>
+            </div>
+        </div>
+    </div>
+
     <script>
-        let agents = [];
-        let activities = [];
-        let selectedAgent = null;
-        function loadState() {
-            const stored = localStorage.getItem('ares-agents');
-            agents = stored ? JSON.parse(stored) : [];
-            const storedActivities = localStorage.getItem('ares-activities');
-            activities = storedActivities ? JSON.parse(storedActivities) : [];
+        // State
+        let repos = [];
+        let workspaces = [];
+        let selectedWorkspace = null;
+        let selectedRepo = null;
+
+        // Demo data
+        function initDemo() {
+            repos = [
+                { id: '1', name: 'gulf-watch', path: '~/Projects/gulf-watch', url: 'https://github.com/nKOxxx/gulf-watch.git' },
+                { id: '2', name: 'ares-agent', path: '~/ares-agent', url: 'https://github.com/nKOxxx/ares-agent.git' }
+            ];
+            workspaces = [
+                { id: '1', repoId: '1', name: 'feature/argus', branch: 'feature/argus', status: 'running', files: ['src/argus.ts', 'src/argus-view.tsx'], task: 'Build Argus entity resolution feature' },
+                { id: '2', repoId: '1', name: 'feature/predict', branch: 'feature/predict', status: 'completed', files: ['src/predict.ts'], task: 'Build Predict missile launcher feature' },
+                { id: '3', repoId: '2', name: 'main', branch: 'main', status: 'running', files: ['index.html', 'main.js'], task: 'Improve UI design' },
+                { id: '4', repoId: '2', name: 'bugfix/auth', branch: 'bugfix/auth', status: 'failed', files: ['auth.py'], task: 'Fix authentication bug' }
+            ];
             render();
         }
-        function saveState() {
-            localStorage.setItem('ares-agents', JSON.stringify(agents));
-            localStorage.setItem('ares-activities', JSON.stringify(activities));
-        }
+
         function render() {
-            document.getElementById('total-agents').textContent = agents.length;
-            const content = document.getElementById('content');
-            if (agents.length === 0) {
-                content.innerHTML = '<div class="empty-state"><div class="empty-icon">💻</div><h3>No Agents Running</h3><p>Spawn an agent to get started</p></div>';
-            } else {
-                content.innerHTML = '<div class="agent-list">' + agents.map(agent => '<div class="agent-card ' + (selectedAgent === agent.id ? 'active' : '') + '" onclick="selectAgent(\'' + agent.id + '\')"><div class="agent-header"><div class="agent-name"><span class="status-dot ' + agent.status + '"></span>' + agent.name + '</div><span class="status-badge ' + agent.status + '">' + agent.status + '</span></div><p class="agent-task">' + agent.task + '</p><div class="agent-meta"><span>◷ ' + (agent.started || 'just now') + '</span><span>' + (agent.branch || 'main') + '</span></div></div>').join('') + '</div>';
-            }
-            const activityEl = document.getElementById('activity');
-            if (activities.length === 0) {
-                activityEl.innerHTML = '<div style="text-align: center; padding: 40px 0; color: var(--text-muted); font-size: 13px;">No activity yet</div>';
-            } else {
-                activityEl.innerHTML = activities.map(a => '<div class="activity-item"><div class="activity-time">' + a.time + '</div><div class="activity-text">' + a.text + '</div></div>').join('');
-            }
+            renderRepos();
+            renderWorkspace();
+            renderPanel();
         }
-        function selectAgent(id) { selectedAgent = selectedAgent === id ? null : id; render(); }
-        function openModal() { document.getElementById('modal').classList.add('visible'); document.getElementById('task-name').focus(); }
-        function closeModal() { document.getElementById('modal').classList.remove('visible'); document.getElementById('task-name').value = ''; document.getElementById('task-desc').value = ''; }
-        function spawnAgent() {
-            const name = document.getElementById('task-name').value.trim();
-            const task = document.getElementById('task-desc').value.trim() || name;
-            if (!name) { alert('Please enter a task name'); return; }
-            const agent = { id: Date.now().toString(), name: name, task: task, status: 'running', started: new Date().toLocaleTimeString(), branch: 'agent/' + name.toLowerCase().replace(/\s+/g, '-') };
-            agents.push(agent);
-            addActivity('Agent <strong>' + name + '</strong> spawned');
-            saveState();
-            closeModal();
+
+        function renderRepos() {
+            const container = document.getElementById('repo-list');
+            container.innerHTML = repos.map(repo => {
+                const repoWorkspaces = workspaces.filter(ws => ws.repoId === repo.id);
+                return `
+                    <div class="repo-item">
+                        <div class="repo-header ${selectedRepo === repo.id ? 'open' : ''}" onclick="toggleRepo('${repo.id}')">
+                            <span class="repo-icon">◉</span>
+                            <span class="repo-name">${repo.name}</span>
+                            <span class="repo-count">${repoWorkspaces.length}</span>
+                        </div>
+                        <div class="workspace-list">
+                            ${repoWorkspaces.map(ws => `
+                                <div class="workspace-item ${selectedWorkspace === ws.id ? 'active' : ''}" onclick="selectWorkspace('${ws.id}')">
+                                    <span class="ws-icon">◷</span>
+                                    <span class="ws-name">${ws.name}</span>
+                                    <span class="ws-status ${ws.status}"></span>
+                                </div>
+                            `).join('')}
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function renderWorkspace() {
+            const chatArea = document.getElementById('chat-area');
+            const breadcrumb = document.getElementById('current-workspace');
+            
+            if (!selectedWorkspace) {
+                breadcrumb.textContent = 'Select a workspace';
+                chatArea.innerHTML = `
+                    <div class="empty-state">
+                        <div class="empty-icon">💻</div>
+                        <h3>No Workspace Selected</h3>
+                        <p>Select a workspace from the sidebar or create a new one</p>
+                    </div>
+                `;
+                return;
+            }
+            
+            const ws = workspaces.find(w => w.id === selectedWorkspace);
+            const repo = repos.find(r => r.id === ws.repoId);
+            breadcrumb.textContent = `${repo.name} / ${ws.name}`;
+            
+            chatArea.innerHTML = `
+                <div class="messages">
+                    <div class="message">
+                        <div class="message-header">
+                            <div class="message-avatar agent">A</div>
+                            <span class="message-name">Agent</span>
+                            <span class="message-time">${new Date().toLocaleTimeString()}</span>
+                        </div>
+                        <div class="message-content">
+                            Working on: <strong>${ws.task}</strong>
+                            <div class="tool-calls">
+                                <div class="tool-call"><span class="tool-icon">📁</span> Creating workspace from ${ws.branch}</div>
+                                <div class="tool-call"><span class="tool-icon">🔧</span> Running setup scripts</div>
+                                <div class="tool-call"><span class="tool-icon">✅</span> Workspace ready</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        function renderPanel() {
+            const panel = document.getElementById('panel-content');
+            
+            if (!selectedWorkspace) {
+                panel.innerHTML = `<div class="empty-state" style="padding: 20px 0;"><p>Select a workspace to see status</p></div>`;
+                return;
+            }
+            
+            const ws = workspaces.find(w => w.id === selectedWorkspace);
+            const repo = repos.find(r => r.id === ws.repoId);
+            
+            panel.innerHTML = `
+                <div class="status-section">
+                    <div class="status-label">Repository</div>
+                    <div class="status-value">${repo.name}</div>
+                </div>
+                <div class="status-section">
+                    <div class="status-label">Branch</div>
+                    <div class="branch-badge">
+                        <span class="branch-icon">⎇</span>
+                        <span>${ws.branch}</span>
+                    </div>
+                </div>
+                <div class="status-section">
+                    <div class="status-label">Status</div>
+                    <div class="status-value" style="text-transform: capitalize; color: ${ws.status === 'running' ? 'var(--warning)' : ws.status === 'completed' ? 'var(--success)' : 'var(--error)'}">
+                        ${ws.status}
+                    </div>
+                </div>
+                <div class="status-section">
+                    <div class="status-label">Task</div>
+                    <div class="status-value">${ws.task}</div>
+                </div>
+                <div class="status-section">
+                    <div class="status-label">Changed Files (${ws.files.length})</div>
+                    <div class="files-list">
+                        ${ws.files.map(f => `
+                            <div class="file-item">
+                                <span class="file-icon">📄</span>
+                                <span class="file-name">${f}</span>
+                                <span class="file-diff add">+12</span>
+                            </div>
+                        `).join('')}
+                    </div>
+                </div>
+                <div class="status-section">
+                    <div class="pr-status">
+                        <span class="pr-icon">↵</span>
+                        <div class="pr-text">
+                            <strong>Ready to merge</strong>
+                            <span>2 hours ago</span>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        function toggleRepo(id) {
+            selectedRepo = selectedRepo === id ? null : id;
             render();
-            setTimeout(() => {
-                const idx = agents.findIndex(a => a.id === agent.id);
-                if (idx >= 0) { agents[idx].status = 'completed'; addActivity('Agent <strong>' + name + '</strong> completed'); saveState(); render(); }
-            }, 3000 + Math.random() * 5000);
         }
-        function addActivity(text) { activities.unshift({ time: new Date().toLocaleTimeString(), text: text }); activities = activities.slice(0, 50); }
-        function refresh() { loadState(); }
-        document.getElementById('modal').addEventListener('click', (e) => { if (e.target.classList.contains('modal-overlay')) closeModal(); });
-        document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeModal(); if ((e.metaKey || e.ctrlKey) && e.key === 'n') { e.preventDefault(); openModal(); } });
-        loadState();
+
+        function selectWorkspace(id) {
+            selectedWorkspace = id;
+            render();
+        }
+
+        function openAddRepo() { document.getElementById('add-repo-modal').classList.add('visible'); }
+        function closeAddRepo() { document.getElementById('add-repo-modal').classList.remove('visible'); }
+        
+        function openNewWorkspace() { document.getElementById('new-workspace-modal').classList.add('visible'); }
+        function closeNewWorkspace() { document.getElementById('new-workspace-modal').classList.remove('visible'); }
+
+        function addRepo() {
+            const url = document.getElementById('repo-url').value.trim();
+            const path = document.getElementById('repo-path').value.trim();
+            if (!url) return;
+            
+            const name = url.split('/').pop().replace('.git', '');
+            repos.push({ id: Date.now().toString(), name, path: path || '', url });
+            closeAddRepo();
+            render();
+        }
+
+        function createWorkspace() {
+            const name = document.getElementById('ws-name').value.trim();
+            if (!name) return;
+            
+            workspaces.push({
+                id: Date.now().toString(),
+                repoId: selectedRepo || repos[0]?.id,
+                name,
+                branch: name,
+                status: 'running',
+                files: [],
+                task: 'New task'
+            });
+            closeNewWorkspace();
+            render();
+        }
+
+        function openWorkspaceSettings() { alert('Workspace settings coming soon'); }
+        function sendMessage() { alert('Chat coming soon'); }
+
+        // Init
+        initDemo();
     </script>
 </body>
 </html>
