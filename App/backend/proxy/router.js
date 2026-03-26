@@ -42,9 +42,9 @@ function getUsageSummary() {
 // Rate limiting (simple token bucket per model)
 const rateLimits = {};
 const RATE_LIMITS = {
-  claude: { maxConcurrent: 3, cooldownMs: 1000 },
-  gpt: { maxConcurrent: 5, cooldownMs: 500 },
-  minimax: { maxConcurrent: 5, cooldownMs: 500 },
+  claude: { maxConcurrent: 10, cooldownMs: 500 },
+  gpt: { maxConcurrent: 10, cooldownMs: 200 },
+  minimax: { maxConcurrent: 10, cooldownMs: 200 },
 };
 
 function checkRateLimit(model) {
