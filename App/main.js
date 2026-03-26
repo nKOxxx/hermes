@@ -1,82 +1,79 @@
-const { app, BrowserWindow } = require('electron');
+const { app, BrowserWindow, Tray, nativeImage, Notification } = require('electron');
 const path = require('path');
-const { spawn } = require('child_process');
+const { start, PORT } = require('./backend/server');
 
 let mainWindow;
-let backend;
-
-function startBackend() {
-    const serverPath = path.join(__dirname, 'backend', 'server.js');
-    console.log('[main] Starting backend:', serverPath);
-    
-    backend = spawn('node', [serverPath], {
-        stdio: 'inherit',
-        detached: true,
-        env: { ...process.env }
-    });
-    
-    backend.on('error', err => {
-        console.error('[main] Backend error:', err);
-    });
-    
-    backend.on('exit', (code) => {
-        console.log('[main] Backend exited with code:', code);
-    });
-}
+let tray;
 
 function createWindow() {
-    console.log('[main] Creating window');
-    
-    mainWindow = new BrowserWindow({
-        width: 1400,
-        height: 900,
-        minWidth: 1100,
-        minHeight: 700,
-        title: '⚡ ARES Agent',
-        backgroundColor: '#09090b',
-        titleBarStyle: 'hiddenInset',
-        webPreferences: {
-            nodeIntegration: false,
-            contextIsolation: true
-        }
-    });
+  mainWindow = new BrowserWindow({
+    width: 1440,
+    height: 920,
+    minWidth: 1100,
+    minHeight: 700,
+    title: 'ARES Agent',
+    backgroundColor: '#09090b',
+    titleBarStyle: 'hiddenInset',
+    trafficLightPosition: { x: 16, y: 16 },
+    webPreferences: {
+      nodeIntegration: false,
+      contextIsolation: true,
+      preload: path.join(__dirname, 'preload.js'),
+    },
+  });
 
-    mainWindow.loadFile(path.join(__dirname, 'index.html'));
-    
-    // Open DevTools in development
-    // mainWindow.webContents.openDevTools();
-    
-    mainWindow.on('closed', () => {
-        mainWindow = null;
-    });
+  // In development, load from Vite dev server; in production, from built files
+  const isDev = process.env.NODE_ENV === 'development';
+  if (isDev) {
+    mainWindow.loadURL(`http://localhost:5173`);
+    mainWindow.webContents.openDevTools();
+  } else {
+    mainWindow.loadURL(`http://localhost:${PORT}`);
+  }
+
+  mainWindow.on('closed', () => {
+    mainWindow = null;
+  });
 }
 
-app.whenReady().then(() => {
-    console.log('[main] App ready');
-    startBackend();
-    // Wait for backend to initialize
-    setTimeout(createWindow, 1500);
+function createTray() {
+  const icon = nativeImage.createFromDataURL(
+    'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAABHNCSVQICAgIfAhkiAAAADRJREFUOI1jYBhowEjh//8GBgYGBobmpsb/DAwMDAwcnFwMDAwMDP///2dgYGBg+P+fYcABAGfZCAdBiVYRAAAAAElFTkSuQmCC'
+  );
+  tray = new Tray(icon);
+  tray.setToolTip('ARES Agent');
+  tray.on('click', () => {
+    if (mainWindow) {
+      mainWindow.show();
+      mainWindow.focus();
+    } else {
+      createWindow();
+    }
+  });
+}
+
+app.whenReady().then(async () => {
+  // Start backend server
+  await start();
+  console.log(`[ARES] Backend ready on port ${PORT}`);
+
+  createWindow();
+  createTray();
 });
 
 app.on('window-all-closed', () => {
-    if (process.platform !== 'darwin') {
-        app.quit();
-    }
+  // Keep running in tray on macOS
+  if (process.platform !== 'darwin') {
+    app.quit();
+  }
 });
 
 app.on('activate', () => {
-    if (BrowserWindow.getAllWindows().length === 0) {
-        createWindow();
-    }
+  if (BrowserWindow.getAllWindows().length === 0) {
+    createWindow();
+  }
 });
 
 app.on('before-quit', () => {
-    console.log('[main] Quitting, killing backend');
-    if (backend) {
-        try {
-            process.kill(backend.pid, 'SIGTERM');
-        } catch (e) {
-            console.error('[main] Failed to kill backend:', e.message);
-        }
-    }
+  console.log('[ARES] Shutting down...');
 });
