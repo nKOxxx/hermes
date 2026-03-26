@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { api } from '../hooks/useAPI';
 import { useUIStore } from '../stores/ui';
+import { useRepoStore } from '../stores/repo';
 
 interface DiffFile {
   filename: string;
@@ -16,8 +17,13 @@ interface DiffData {
   total_deletions: number;
 }
 
-export default function DiffViewer() {
+interface DiffViewerProps {
+  embedded?: boolean;
+}
+
+export default function DiffViewer({ embedded = false }: DiffViewerProps) {
   const workspaceId = useUIStore((s) => s.selectedWorkspaceId);
+  const updateWorkspace = useRepoStore((s) => s.updateWorkspace);
   const [diff, setDiff] = useState<DiffData | null>(null);
   const [selectedFile, setSelectedFile] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
@@ -44,6 +50,7 @@ export default function DiffViewer() {
     setActionLoading(true);
     try {
       await api('POST', `/api/reviews/${diff.review_id}/merge`);
+      if (workspaceId) updateWorkspace(workspaceId, { status: 'completed' });
     } catch (err) {
       console.error('Merge failed:', err);
     } finally {
@@ -63,17 +70,18 @@ export default function DiffViewer() {
     }
   };
 
+  // Empty / loading / error states
   if (!workspaceId) {
     return (
-      <div className="flex-1 flex items-center justify-center text-zinc-600">
-        Select a workspace to view diffs
+      <div className="flex items-center justify-center h-full text-[--color-ares-text-muted] text-[12px]">
+        Select a workspace
       </div>
     );
   }
 
   if (loading) {
     return (
-      <div className="flex-1 flex items-center justify-center text-zinc-500">
+      <div className="flex items-center justify-center h-full text-[--color-ares-text-muted] text-[12px]">
         Loading diff...
       </div>
     );
@@ -81,7 +89,7 @@ export default function DiffViewer() {
 
   if (error) {
     return (
-      <div className="flex-1 flex items-center justify-center text-red-400">
+      <div className="flex items-center justify-center h-full text-[--color-ares-red] text-[12px]">
         {error}
       </div>
     );
@@ -89,7 +97,7 @@ export default function DiffViewer() {
 
   if (!diff || !diff.files?.length) {
     return (
-      <div className="flex-1 flex items-center justify-center text-zinc-600">
+      <div className="flex items-center justify-center h-full text-[--color-ares-text-muted] text-[12px]">
         No changes to review
       </div>
     );
@@ -97,88 +105,150 @@ export default function DiffViewer() {
 
   const activeFile = diff.files.find((f) => f.filename === selectedFile);
 
-  return (
-    <div className="flex-1 flex flex-col h-full overflow-hidden">
-      {/* Stats bar */}
-      <div className="flex items-center gap-6 px-6 py-3 border-b border-[#27272a] bg-[#111113]">
-        <span className="text-sm text-[#a1a1aa]">
-          {diff.files.length} file{diff.files.length !== 1 ? 's' : ''} changed
-        </span>
-        <span className="text-sm text-green-400">+{diff.total_insertions}</span>
-        <span className="text-sm text-red-400">-{diff.total_deletions}</span>
-      </div>
-
-      <div className="flex flex-1 overflow-hidden">
-        {/* File list */}
-        <div className="w-64 border-r border-[#27272a] bg-[#111113] overflow-y-auto">
+  // Embedded mode (used in RightPanel) — compact, no file sidebar
+  if (embedded) {
+    return (
+      <div className="flex flex-col h-full">
+        {/* File tabs */}
+        <div className="flex items-center gap-1 px-2 py-1 overflow-x-auto">
           {diff.files.map((file) => (
             <button
               key={file.filename}
               onClick={() => setSelectedFile(file.filename)}
-              className={`w-full text-left px-4 py-2.5 text-sm border-b border-[#27272a]/50 transition-colors ${
+              className={`flex items-center gap-1.5 px-2 py-1 text-[11px] rounded whitespace-nowrap transition-colors ${
                 selectedFile === file.filename
-                  ? 'bg-[#18181b] text-[#fafafa]'
-                  : 'text-[#a1a1aa] hover:bg-[#18181b]/50'
+                  ? 'bg-[--color-ares-surface-hover] text-[--color-ares-text]'
+                  : 'text-[--color-ares-text-muted] hover:text-[--color-ares-text-secondary]'
               }`}
             >
-              <div className="truncate font-mono text-xs">{file.filename}</div>
+              <span className="font-mono truncate max-w-[120px]">{file.filename.split('/').pop()}</span>
+              <span className="inline-flex items-center gap-0.5 text-[9px]">
+                <span className="text-[--color-ares-green]">+{file.insertions}</span>
+                <span className="text-[--color-ares-red]">-{file.deletions}</span>
+              </span>
+            </button>
+          ))}
+        </div>
+
+        {/* Diff content */}
+        <div className="flex-1 overflow-y-auto px-1">
+          {activeFile && <DiffContent patch={activeFile.patch} />}
+        </div>
+      </div>
+    );
+  }
+
+  // Full-page mode (standalone view)
+  return (
+    <div className="flex-1 flex flex-col h-full overflow-hidden">
+      {/* Stats bar */}
+      <div className="flex items-center gap-4 px-6 py-3 border-b border-[--color-ares-border-subtle] bg-[--color-ares-bg]">
+        <span className="text-[13px] text-[--color-ares-text-secondary]">
+          {diff.files.length} file{diff.files.length !== 1 ? 's' : ''} changed
+        </span>
+        <span className="text-[13px] text-[--color-ares-green]">+{diff.total_insertions}</span>
+        <span className="text-[13px] text-[--color-ares-red]">-{diff.total_deletions}</span>
+      </div>
+
+      <div className="flex flex-1 overflow-hidden">
+        {/* File list */}
+        <div className="w-60 border-r border-[--color-ares-border-subtle] bg-[--color-ares-sidebar] overflow-y-auto">
+          {diff.files.map((file) => (
+            <button
+              key={file.filename}
+              onClick={() => setSelectedFile(file.filename)}
+              className={`w-full text-left px-4 py-2.5 border-b border-[--color-ares-border-subtle]/50 transition-colors ${
+                selectedFile === file.filename
+                  ? 'bg-[--color-ares-surface-hover] text-[--color-ares-text]'
+                  : 'text-[--color-ares-text-secondary] hover:bg-[--color-ares-surface]/40'
+              }`}
+            >
+              <div className="truncate font-mono text-[12px]">{file.filename}</div>
               <div className="flex gap-2 mt-1">
-                <span className="text-green-400 text-xs">+{file.insertions}</span>
-                <span className="text-red-400 text-xs">-{file.deletions}</span>
+                <span className="text-[--color-ares-green] text-[11px]">+{file.insertions}</span>
+                <span className="text-[--color-ares-red] text-[11px]">-{file.deletions}</span>
               </div>
             </button>
           ))}
         </div>
 
         {/* Diff content */}
-        <div className="flex-1 overflow-y-auto bg-[#09090b] p-4">
+        <div className="flex-1 overflow-y-auto bg-[--color-ares-bg] p-4">
           {activeFile ? (
-            <pre className="font-mono text-xs leading-5">
-              {activeFile.patch.split('\n').map((line, i) => {
-                let color = 'text-zinc-400';
-                let bg = '';
-                if (line.startsWith('+')) {
-                  color = 'text-green-400';
-                  bg = 'bg-green-400/5';
-                } else if (line.startsWith('-')) {
-                  color = 'text-red-400';
-                  bg = 'bg-red-400/5';
-                } else if (line.startsWith('@@')) {
-                  color = 'text-cyan-400';
-                  bg = 'bg-cyan-400/5';
-                }
-                return (
-                  <div key={i} className={`${color} ${bg} px-2`}>
-                    {line}
-                  </div>
-                );
-              })}
-            </pre>
+            <DiffContent patch={activeFile.patch} />
           ) : (
-            <div className="text-zinc-600 text-sm">Select a file to view</div>
+            <div className="text-[--color-ares-text-muted] text-[12px]">Select a file to view</div>
           )}
         </div>
       </div>
 
       {/* Actions */}
       {diff.review_id && (
-        <div className="flex justify-end gap-3 px-6 py-4 border-t border-[#27272a] bg-[#111113]">
+        <div className="flex justify-end gap-3 px-6 py-3 border-t border-[--color-ares-border-subtle] bg-[--color-ares-bg]">
           <button
             onClick={handleReject}
             disabled={actionLoading}
-            className="px-5 py-2 text-sm text-red-400 border border-red-400/30 rounded-lg hover:bg-red-400/10 disabled:opacity-50 transition-colors"
+            className="px-5 py-2 text-[13px] text-[--color-ares-red] border border-[--color-ares-red]/30 rounded-lg hover:bg-[--color-ares-red]/10 disabled:opacity-50 transition-colors"
           >
             Reject
           </button>
           <button
             onClick={handleApprove}
             disabled={actionLoading}
-            className="px-5 py-2 text-sm bg-green-500 text-black font-medium rounded-lg hover:bg-green-400 disabled:opacity-50 transition-colors"
+            className="px-5 py-2 text-[13px] bg-[--color-ares-green] text-black font-medium rounded-lg hover:brightness-110 disabled:opacity-50 transition-all"
           >
             Approve & Merge
           </button>
         </div>
       )}
     </div>
+  );
+}
+
+/* ── diff content renderer ────────────────────────────────────── */
+
+function DiffContent({ patch }: { patch: string }) {
+  const lines = patch.split('\n');
+  let lineNum = 0;
+
+  return (
+    <pre className="font-mono text-[12px] leading-5">
+      {lines.map((line, i) => {
+        let color = 'text-[--color-ares-text-secondary]';
+        let bg = '';
+        let showLineNum = true;
+
+        if (line.startsWith('@@')) {
+          color = 'text-[--color-ares-accent]';
+          bg = 'bg-[--color-ares-accent]/5';
+          showLineNum = false;
+          // Parse line number from @@ -x,y +x,y @@
+          const match = line.match(/\+(\d+)/);
+          if (match) lineNum = parseInt(match[1], 10) - 1;
+        } else if (line.startsWith('+')) {
+          color = 'text-[--color-ares-green]';
+          bg = 'bg-[--color-ares-diff-add]';
+          lineNum++;
+        } else if (line.startsWith('-')) {
+          color = 'text-[--color-ares-red]';
+          bg = 'bg-[--color-ares-diff-del]';
+          // Don't increment line number for deletions
+        } else {
+          lineNum++;
+        }
+
+        return (
+          <div key={i} className={`flex ${bg} hover:brightness-125 transition-colors`}>
+            {showLineNum && (
+              <span className="w-10 text-right pr-3 text-[--color-ares-text-muted]/50 select-none flex-shrink-0">
+                {lineNum > 0 ? lineNum : ''}
+              </span>
+            )}
+            {!showLineNum && <span className="w-10 flex-shrink-0" />}
+            <span className={`${color} flex-1 px-2`}>{line}</span>
+          </div>
+        );
+      })}
+    </pre>
   );
 }

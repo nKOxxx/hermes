@@ -5,12 +5,12 @@ interface TerminalProps {
   lines: OutputLine[];
 }
 
-const typeColors: Record<string, string> = {
-  text: 'text-white',
-  tool_use: 'text-cyan-400',
-  error: 'text-red-400',
-  system: 'text-zinc-500',
-  result: 'text-green-400',
+const typeStyles: Record<string, { text: string; prefix: string }> = {
+  text: { text: 'text-[--color-ares-text]', prefix: '' },
+  tool_use: { text: 'text-[--color-ares-accent]', prefix: '$ ' },
+  error: { text: 'text-[--color-ares-red]', prefix: '! ' },
+  system: { text: 'text-[--color-ares-text-muted]', prefix: '# ' },
+  result: { text: 'text-[--color-ares-green]', prefix: '> ' },
 };
 
 export default function Terminal({ lines }: TerminalProps) {
@@ -26,33 +26,25 @@ export default function Terminal({ lines }: TerminalProps) {
   return (
     <div
       ref={containerRef}
-      className="flex-1 overflow-y-auto bg-[#09090b] rounded-lg border border-[#27272a] p-4 font-mono text-sm leading-relaxed"
+      className="h-full overflow-y-auto bg-[#131416] p-3 font-mono text-[12px] leading-5"
     >
       {lines.length === 0 ? (
-        <div className="text-zinc-600 flex items-center justify-center h-full">
-          <div className="text-center">
-            <div className="text-2xl mb-2">{'>'}_</div>
-            <div>Waiting for agent output...</div>
-          </div>
+        <div className="text-[--color-ares-text-muted] flex items-center h-full">
+          <span className="opacity-50">{'>'} Waiting for output...</span>
+          <span className="animate-pulse ml-0.5">_</span>
         </div>
       ) : (
-        lines.map((line, i) => (
-          <div key={i} className={`${typeColors[line.type] || 'text-white'} whitespace-pre-wrap break-all`}>
-            {line.type === 'tool_use' && (
-              <span className="text-cyan-600 mr-2">[tool]</span>
-            )}
-            {line.type === 'error' && (
-              <span className="text-red-600 mr-2">[error]</span>
-            )}
-            {line.type === 'system' && (
-              <span className="text-zinc-600 mr-2">[sys]</span>
-            )}
-            {line.type === 'result' && (
-              <span className="text-green-600 mr-2">[result]</span>
-            )}
-            {line.content}
-          </div>
-        ))
+        lines.map((line, i) => {
+          const style = typeStyles[line.type] || typeStyles.text;
+          return (
+            <div key={i} className={`${style.text} whitespace-pre-wrap break-all`}>
+              {style.prefix && (
+                <span className="opacity-50 select-none">{style.prefix}</span>
+              )}
+              {line.content}
+            </div>
+          );
+        })
       )}
     </div>
   );

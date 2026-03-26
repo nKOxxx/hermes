@@ -1,19 +1,20 @@
-# ARES Agent v3
+# ARES Agent
 
-Personal multi-agent orchestrator — run parallel Claude, GPT & MiniMax agents in isolated git worktrees across all your repos.
+Run a fleet of AI coding agents in parallel — each in its own isolated git worktree, with real-time streaming, code review, and one-click merge.
 
-Your own [Conductor](https://www.conductor.build), but self-hosted and multi-model.
+ARES is a self-hosted macOS desktop app that lets you orchestrate multiple AI agents (Claude Code, GPT, MiniMax) working simultaneously across your repos. Add a repository, spin up workspaces, assign tasks to different models, watch them work in real time, review the diffs, and merge to main.
 
 ## Features
 
-- **Multi-model agents** — Claude Code (primary coding), GPT (research), MiniMax (general tasks)
-- **Git worktree isolation** — each agent works in its own branch, no conflicts
-- **Real-time streaming** — watch agents work via Server-Sent Events
-- **Code review & merge** — diff viewer with approve/reject/merge workflow
-- **Dashboard** — mission control view across all repos and agents
-- **Unified proxy** — single layer for auth, rate limits, and cost tracking
+- **Parallel agent execution** — run multiple Claude Code, GPT, or MiniMax agents at the same time
+- **Git worktree isolation** — each workspace gets its own branch, no conflicts between agents
+- **Multi-model support** — Claude for coding, GPT for research, MiniMax for general tasks, all through a unified proxy
+- **Real-time streaming** — watch agent output live as they work (SSE)
+- **Code review & merge** — diff viewer with approve/reject/merge workflow, conflict detection
+- **Mission control dashboard** — see all agents across all repos in one grid view
+- **Cost tracking** — token usage and cost estimates per model, per run
 - **SQLite persistence** — all state survives restarts, no external database needed
-- **Electron desktop app** — native macOS app with tray icon
+- **Native macOS app** — Electron with tray icon, keyboard shortcuts, hiddenInset title bar
 
 ## Quick Start
 
@@ -52,7 +53,7 @@ App/
     streaming/sse.js         # Server-Sent Events
   frontend/                  # React + Vite + Tailwind
     src/
-      components/            # Sidebar, Dashboard, Terminal, DiffViewer, SpawnModal
+      components/            # Sidebar, Chat, Terminal, DiffViewer
       stores/                # Zustand state management
       hooks/                 # SSE + API hooks
 ```
@@ -80,6 +81,10 @@ ARES_PORT=8765               # Backend port (default: 8765)
 | GET | /api/dashboard | All agents across all repos |
 | GET | /api/proxy/usage | Cost & token tracking |
 | GET | /events | SSE stream |
+
+## Inspiration
+
+ARES was inspired by [Conductor](https://www.conductor.build) — a fantastic app for running parallel Claude Code agents. ARES takes the same core concept and extends it with multi-model support (Claude + GPT + MiniMax), a unified cost tracking proxy, and a self-hosted architecture with no cloud dependency.
 
 ## License
 

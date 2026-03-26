@@ -4,9 +4,9 @@ import { useUIStore } from '../stores/ui';
 import { useRepoStore } from '../stores/repo';
 
 const MODELS = [
-  { id: 'claude', label: 'Claude', color: 'bg-cyan-400' },
-  { id: 'gpt', label: 'GPT', color: 'bg-green-400' },
-  { id: 'minimax', label: 'MiniMax', color: 'bg-violet-400' },
+  { id: 'claude', label: 'Claude', badge: 'bg-[--color-ares-accent]' },
+  { id: 'gpt', label: 'GPT', badge: 'bg-[--color-ares-green]' },
+  { id: 'minimax', label: 'MiniMax', badge: 'bg-violet-400' },
 ] as const;
 
 export default function SpawnModal() {
@@ -46,22 +46,30 @@ export default function SpawnModal() {
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
-      <div className="bg-[#111113] border border-[#27272a] rounded-xl w-full max-w-lg p-6 shadow-2xl">
-        <h2 className="text-lg font-semibold text-[#fafafa] mb-4">Spawn Agent</h2>
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm"
+      onClick={() => setOpen(false)}
+    >
+      <div
+        className="bg-[--color-ares-surface] border border-[--color-ares-border] rounded-xl w-full max-w-lg p-6 shadow-2xl"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <h2 className="text-base font-semibold text-[--color-ares-text] mb-5">Spawn Agent</h2>
 
         {/* Model selector */}
-        <div className="mb-4">
-          <label className="text-sm text-[#a1a1aa] mb-2 block">Model</label>
+        <div className="mb-5">
+          <label className="text-[12px] text-[--color-ares-text-secondary] mb-2 block font-medium uppercase tracking-wide">
+            Model
+          </label>
           <div className="flex gap-2">
             {MODELS.map((m) => (
               <button
                 key={m.id}
                 onClick={() => setModel(m.id)}
-                className={`px-4 py-2 rounded-full text-sm font-medium transition-all ${
+                className={`px-4 py-2 rounded-lg text-[13px] font-medium transition-all border ${
                   model === m.id
-                    ? `${m.color} text-black`
-                    : 'bg-[#18181b] text-[#a1a1aa] hover:bg-[#27272a]'
+                    ? `${m.badge} text-black border-transparent`
+                    : 'bg-[--color-ares-bg] border-[--color-ares-border] text-[--color-ares-text-secondary] hover:border-[--color-ares-text-muted]'
                 }`}
               >
                 {m.label}
@@ -71,21 +79,24 @@ export default function SpawnModal() {
         </div>
 
         {/* Task input */}
-        <div className="mb-4">
-          <label className="text-sm text-[#a1a1aa] mb-2 block">Task</label>
+        <div className="mb-5">
+          <label className="text-[12px] text-[--color-ares-text-secondary] mb-2 block font-medium uppercase tracking-wide">
+            Task
+          </label>
           <textarea
             value={task}
             onChange={(e) => setTask(e.target.value)}
             placeholder="Describe what the agent should do..."
-            className="w-full h-32 bg-[#09090b] border border-[#27272a] rounded-lg p-3 text-sm text-[#fafafa] placeholder-zinc-600 resize-none focus:outline-none focus:border-cyan-400/50"
+            className="w-full h-32 bg-[--color-ares-bg] border border-[--color-ares-border] rounded-lg p-3 text-[13px] text-[--color-ares-text] placeholder-[--color-ares-text-muted] resize-none focus:outline-none focus:border-[--color-ares-accent]/50 transition-colors"
+            autoFocus
           />
         </div>
 
         {/* Model-specific options */}
         {model === 'claude' ? (
           <div className="mb-6">
-            <label className="text-sm text-[#a1a1aa] mb-2 block">
-              Max Turns: {maxTurns}
+            <label className="text-[12px] text-[--color-ares-text-secondary] mb-2 block">
+              Max Turns: <span className="text-[--color-ares-text]">{maxTurns}</span>
             </label>
             <input
               type="range"
@@ -93,13 +104,13 @@ export default function SpawnModal() {
               max={100}
               value={maxTurns}
               onChange={(e) => setMaxTurns(Number(e.target.value))}
-              className="w-full accent-cyan-400"
+              className="w-full accent-[--color-ares-accent]"
             />
           </div>
         ) : (
           <div className="mb-6">
-            <label className="text-sm text-[#a1a1aa] mb-2 block">
-              Temperature: {temperature.toFixed(1)}
+            <label className="text-[12px] text-[--color-ares-text-secondary] mb-2 block">
+              Temperature: <span className="text-[--color-ares-text]">{temperature.toFixed(1)}</span>
             </label>
             <input
               type="range"
@@ -108,7 +119,7 @@ export default function SpawnModal() {
               step={0.1}
               value={temperature}
               onChange={(e) => setTemperature(Number(e.target.value))}
-              className="w-full accent-cyan-400"
+              className="w-full accent-[--color-ares-accent]"
             />
           </div>
         )}
@@ -117,14 +128,14 @@ export default function SpawnModal() {
         <div className="flex justify-end gap-3">
           <button
             onClick={() => setOpen(false)}
-            className="px-4 py-2 text-sm text-[#a1a1aa] hover:text-[#fafafa] transition-colors"
+            className="px-4 py-2 text-[13px] text-[--color-ares-text-secondary] hover:text-[--color-ares-text] transition-colors"
           >
             Cancel
           </button>
           <button
             onClick={handleSpawn}
             disabled={!task.trim() || spawning}
-            className="px-6 py-2 bg-cyan-400 text-black text-sm font-medium rounded-lg hover:bg-cyan-300 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            className="px-6 py-2 bg-[--color-ares-accent] text-black text-[13px] font-medium rounded-lg hover:brightness-110 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
           >
             {spawning ? 'Spawning...' : 'Spawn'}
           </button>
